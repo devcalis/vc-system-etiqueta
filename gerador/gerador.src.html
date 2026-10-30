@@ -73,6 +73,7 @@ button,input{font:inherit;color:inherit}
 .status .mono{font-family:var(--f-code);color:var(--fg);letter-spacing:.03em}
 .status button{margin-left:4px}
 .ferr{margin:0;font-size:12.5px;color:var(--err);min-height:0}
+.ferr[data-kind="info"]{color:var(--muted)}
 .opt{font-weight:500;opacity:.8}
 .add-row{display:flex;gap:8px;flex-wrap:wrap}
 .add-row .add{flex:1 1 220px;width:auto}
@@ -480,7 +481,8 @@ function price(rec, v, L) {
     return { total: wc + 0.1 * sz + wi + 0.04 * sz + wn, cur, cen, wc, wi };
   };
   let l = lay(size);
-  if (l.total > PRICE_MAXW) { size *= PRICE_MAXW / l.total; l = lay(size); }
+  const maxw = L.maxw || PRICE_MAXW;                 // na promoção sobra menos largura
+  if (l.total > maxw) { size *= maxw / l.total; l = lay(size); }
   const top = L.priceBase + size * capR("price");
   let x = X0;
   text(rec, "rs", "R$", x, top - l.cur * capR("rs"), l.cur, T.soft);
@@ -488,6 +490,28 @@ function price(rec, v, L) {
   text(rec, "price", inteiro, x, L.priceBase, size, T.ink, { track: -0.01 });
   x += l.wi + 0.04 * size;
   text(rec, "price", "," + cent, x, top - l.cen * capR("price"), l.cen, T.ink);
+  return { top, size };
+}
+
+/* Promoção: o preço da promoção é o preço grande; à direita, o preço normal pequeno e
+   riscado (alinhado pelo topo) e, embaixo dele, o selo com o desconto (−25%). */
+function promoPrice(rec, oldV, newV, L) {
+  const k = "name", cr = capR(k), cap = 1.35, size = cap / cr, track = 0.02;
+  const oldTxt = "R$ " + fmtPrice(oldV), wOld = textW(k, oldTxt, size, track);
+  const pct = Math.round((1 - newV / oldV) * 100);
+  const tag = pct >= 1 ? `−${pct}%` : "";
+  const tCap = 1.4, tSize = tCap / cr, th = 2.5, tw = tag ? textW(k, tag, tSize, 0.02) + 1.5 : 0;
+  const col = Math.max(wOld, tw), gap = 1.4;
+  const r = price(rec, newV, { ...L, maxw: PRICE_MAXW - col - gap });
+  const base = r.top - cap;
+  text(rec, k, oldTxt, X1 - wOld, base, size, T.soft, { track });
+  const st = pathB(rec.m), sy = base + cap * 0.45;
+  st.M(X1 - wOld - 0.2, sy); st.L(X1 + 0.1, sy);
+  rec.ops.push({ t: "stroke", segs: st.segs, color: T.soft, width: 0.2 });
+  if (tag) {
+    const pp = pathB(rec.m); rrectP(pp, X1 - tw, L.priceBase, tw, th, th / 2); fill(rec, pp.segs, T.ink);
+    text(rec, k, tag, X1 - tw / 2, L.priceBase + (th - tCap) / 2, tSize, T.bg, { track: 0.02, anchor: "middle" });
+  }
 }
 
 function barcode(rec, ean) {
@@ -541,7 +565,8 @@ function drawLabel(rec, d) {
   lockup(rec);
   sizeChip(rec, d.size);
   productName(rec, d.name, L);
-  price(rec, d.price, L);
+  if (d.promo != null && d.price != null) promoPrice(rec, d.price, d.promo, L);
+  else price(rec, d.price, L);
   barcode(rec, d.ean);
 }
 
@@ -672,7 +697,7 @@ async function toPDF(pages, title) {
               ocupa. Por isso dá pra trocar só 3 etiquetas da folha sem mexer nas outras. */
 const KEY = "vc-etiquetas-v2", KEY_V1 = "vc-etiquetas-v1";
 let seq = 1;
-const newProduct = (o = {}) => ({ id: seq++, code: "", name: "", price: "", size: "", generated: false, ...o });
+const newProduct = (o = {}) => ({ id: seq++, code: "", name: "", price: "", promo: "", size: "", generated: false, ...o });
 const state = { products: [], slots: [], active: 0, page: 0, sel: new Set(), theme: "preta" };
 function setTheme(name) { state.theme = THEMES[name] ? name : "preta"; T = THEMES[state.theme]; }
 const byId = id => state.products.find(p => p.id === id);
@@ -722,7 +747,7 @@ function load() {
   if (s && Array.isArray(s.products) && s.products.length && Array.isArray(s.slots)) {
     const map = new Map();
     for (const p of s.products) {
-      const np = newProduct({ code: String(p.code || ""), name: String(p.name || "").slice(0, 50), price: String(p.price || ""), size: cleanSize(p.size), generated: !!p.generated });
+      const np = newProduct({ code: String(p.code || ""), name: String(p.name || "").slice(0, 50), price: String(p.price || ""), promo: String(p.promo || ""), size: cleanSize(p.size), generated: !!p.generated });
       map.set(p.id, np.id); state.products.push(np);
     }
     state.slots = s.slots.map(v => (map.has(v) ? map.get(v) : null));
@@ -746,7 +771,7 @@ function saveNow() {
   clearTimeout(saveT); saveT = 0;
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      products: state.products.map(({ id, code, name, price, size, generated }) => ({ id, code, name, price, size, generated })),
+      products: state.products.map(({ id, code, name, price, promo, size, generated }) => ({ id, code, name, price, promo, size, generated })),
       slots: state.slots,
       theme: state.theme,
     }));
@@ -757,12 +782,17 @@ function persist() { clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
 addEventListener("pagehide", () => saveT && saveNow());
 document.addEventListener("visibilitychange", () => document.hidden && saveT && saveNow());
 
-const derive = p => ({ ...EAN.resolve(p.code), price: parsePrice(p.price), size: p.size, name: cleanName(p.name) });
+const derive = p => {
+  const price = parsePrice(p.price), pv = parsePrice(p.promo), typed = String(p.promo || "").trim() !== "";
+  const ok = pv != null && price != null && pv < price;
+  return { ...EAN.resolve(p.code), price, promo: ok ? pv : null, promoBad: typed && !ok, promoRaw: pv,
+           size: p.size, name: cleanName(p.name) };
+};
 function labelOf(id) {
   const p = id == null ? null : byId(id);
   if (!p) return null;
   const d = derive(p);
-  return { price: d.price, size: d.size, ean: d.ean, name: d.name };
+  return { price: d.price, promo: d.promo, size: d.size, ean: d.ean, name: d.name };
 }
 const sheetLabels = k => state.slots.slice(k * PER_SHEET, (k + 1) * PER_SHEET).map(labelOf);
 const used = () => state.slots.filter(v => v != null).length;
@@ -774,6 +804,7 @@ function problems() {
     const d = derive(p), n = state.products.length > 1 ? ` do produto ${i + 1}` : "";
     if (!d.ean) list.push(d.kind === "err" ? `Corrija o código${n}.` : `Falta o código${n}.`);
     if (d.price == null) list.push(String(p.price).trim() ? `Confira o preço${n}.` : `Falta o preço${n}.`);
+    else if (d.promoBad) list.push(`Confira a promoção${n}.`);
   });
   return list;
 }
@@ -807,6 +838,13 @@ function itemHTML(p, i) {
         <div class="money"><span>R$</span><input class="inp" id="price-${k}" data-f="price" inputmode="decimal" autocomplete="off" placeholder="119,99" value="${esc(p.price)}"></div>
         <p class="ferr" data-perr></p>
       </div>
+      <div class="field">
+        <label for="promo-${k}">Promoção <span class="opt">(opcional)</span></label>
+        <div class="money"><span>R$</span><input class="inp" id="promo-${k}" data-f="promo" inputmode="decimal" autocomplete="off" placeholder="89,90" value="${esc(p.promo)}"></div>
+        <p class="ferr" data-promo></p>
+      </div>
+    </div>
+    <div class="row2">
       <div class="field">
         <label for="qty-${k}">Quantidade</label>
         <div class="stepper"><button type="button" data-act="dec" aria-label="Menos uma">−</button>
@@ -852,12 +890,28 @@ function refreshItem(p) {
   if (rc && p.auto) {
     st.dataset.kind = "ok";
     msg = `Preenchido com a última etiqueta deste código (${fmtDay(rc.last)}).`;
-  } else if (rc && (cleanName(p.name) !== cleanName(rc.name) || d.price !== parsePrice(rc.price) || p.size !== rc.size)) {
-    msg += ` <button class="btn-link" type="button" data-act="usesaved">Usar o salvo: ${[cleanName(rc.name), "R$ " + rc.price, rc.size].filter(Boolean).map(esc).join(" · ")}</button>`;
+    // promoção não entra sozinha (pode já ter acabado): oferece aplicar
+    if (rc.promo && !String(p.promo).trim())
+      msg += ` <button class="btn-link" type="button" data-act="usepromo">Aplicar a promoção de antes (R$ ${esc(rc.promo)})</button>`;
+  } else if (rc && (cleanName(p.name) !== cleanName(rc.name) || d.price !== parsePrice(rc.price) || p.size !== rc.size ||
+                    d.promo !== (rc.promo ? parsePrice(rc.promo) : null))) {
+    const pr = rc.promo ? `R$ ${rc.promo} (de ${rc.price})` : `R$ ${rc.price}`;
+    msg += ` <button class="btn-link" type="button" data-act="usesaved">Usar o salvo: ${[cleanName(rc.name), pr, rc.size].filter(Boolean).map(esc).join(" · ")}</button>`;
   }
   // só reescreve se mudou: senão um clique num botão do aviso se perde quando o campo perde o foco
   if (st._msg !== msg) { st.innerHTML = msg; st._msg = msg; }
   el.querySelector("[data-perr]").textContent = String(p.price).trim() && d.price == null ? "Preço inválido. Use o formato 119,99." : "";
+  const pm = el.querySelector("[data-promo]");
+  if (d.promo != null) {
+    const pct = Math.round((1 - d.promo / d.price) * 100);
+    pm.dataset.kind = "info";
+    pm.textContent = `${pct >= 1 ? `−${pct}% · ` : ""}o preço normal sai riscado.`;
+  } else if (d.promoBad) {
+    pm.dataset.kind = "err";
+    pm.textContent = d.promoRaw == null ? "Valor inválido. Use o formato 89,90."
+      : d.price == null ? "Preencha o preço normal também."
+      : "Tem que ser menor que o preço normal.";
+  } else { pm.dataset.kind = ""; pm.textContent = ""; }
   el.querySelector("[data-sum]").textContent = q ? plural(q, "etiqueta", "etiquetas") : "fora da folha";
   const pi = state.products.indexOf(p);
   el.querySelector("[data-title]").textContent = d.name ? `${pi + 1}. ${d.name}` : `Produto ${pi + 1}`;
@@ -882,7 +936,7 @@ function renderPreview() {
     // etiqueta ampliada do produto ativo
     const p = state.products[state.active] || state.products[0];
     const ops = [];
-    if (p) { const d = derive(p); drawLabel({ ops, m: [1, 0, 0, 1, 0, 0] }, { price: d.price, size: d.size, ean: d.ean, name: d.name }); }
+    if (p) { const d = derive(p); drawLabel({ ops, m: [1, 0, 0, 1, 0, 0] }, { price: d.price, promo: d.promo, size: d.size, ean: d.ean, name: d.name }); }
     $("#labelPreview").innerHTML = toSVG(ops, W, H);
     const nm = p ? cleanName(p.name) : "";
     $("#labelWho").textContent = nm || (state.products.length > 1 ? `Produto ${state.active + 1}` : "Prévia");
@@ -971,7 +1025,7 @@ $("#items").addEventListener("input", e => {
   const f = e.target.dataset.f; if (!f) return;
   const p = prodOf(e.target);
   if (f === "code") { p.code = e.target.value; p.generated = false; autofill(p); }
-  if (f === "price" || f === "name") {
+  if (f === "price" || f === "name" || f === "promo") {
     p[f] = e.target.value;
     if (p.auto) { delete p.auto[f]; if (!Object.keys(p.auto).length) p.auto = null; }   // mexeu: vira dado seu
   }
@@ -992,7 +1046,7 @@ $("#items").addEventListener("input", e => {
 $("#items").addEventListener("change", e => {
   const f = e.target.dataset.f; if (!f) return;
   const p = prodOf(e.target);
-  if (f === "price") { const v = parsePrice(p.price); if (v != null) { p.price = fmtPrice(v); e.target.value = p.price; } update(p); }
+  if (f === "price" || f === "promo") { const v = parsePrice(p[f]); if (v != null) { p[f] = fmtPrice(v); e.target.value = p[f]; } update(p); }
   if (f === "qty") e.target.value = qtyOf(p.id);
 });
 $("#items").addEventListener("focusin", e => {
@@ -1025,7 +1079,10 @@ $("#items").addEventListener("click", e => {
     if (p.auto) { delete p.auto.size; if (!Object.keys(p.auto).length) p.auto = null; }
   } else if (act === "usesaved") {
     const rc = findRecent(EAN.resolve(p.code).ean);
-    if (rc) { p.name = rc.name; p.price = rc.price; p.size = rc.size; p.auto = null; syncFields(p); }
+    if (rc) { p.name = rc.name; p.price = rc.price; p.promo = rc.promo || ""; p.size = rc.size; p.auto = null; syncFields(p); }
+  } else if (act === "usepromo") {
+    const rc = findRecent(EAN.resolve(p.code).ean);
+    if (rc && rc.promo) { p.promo = rc.promo; syncFields(p); }
   } else if (act === "remove") {
     const snap = { products: state.products.slice(), slots: state.slots.slice(), active: state.active };
     const at = state.products.indexOf(p);
@@ -1115,13 +1172,13 @@ function record() {
     const d = derive(p), i = hist.catalog.findIndex(c => c.ean === d.ean);
     const uses = (i >= 0 ? hist.catalog[i].uses || 0 : 0) + qtyOf(p.id);
     if (i >= 0) hist.catalog.splice(i, 1);
-    hist.catalog.unshift({ ean: d.ean, name: String(p.name).trim(), price: fmtPrice(d.price), size: p.size, last: ts, uses });
+    hist.catalog.unshift({ ean: d.ean, name: String(p.name).trim(), price: fmtPrice(d.price), promo: d.promo != null ? fmtPrice(d.promo) : "", size: p.size, last: ts, uses });
   }
   hist.catalog = hist.catalog.slice(0, 300);
   const ids = inUse.map(p => p.id);
   const job = {
     ts, n: state.slots.filter(v => ids.includes(v)).length,
-    products: inUse.map(p => ({ code: derive(p).ean, name: String(p.name).trim(), price: fmtPrice(derive(p).price), size: p.size })),
+    products: inUse.map(p => { const d = derive(p); return { code: d.ean, name: String(p.name).trim(), price: fmtPrice(d.price), promo: d.promo != null ? fmtPrice(d.promo) : "", size: p.size }; }),
     slots: state.slots.map(v => (ids.includes(v) ? ids.indexOf(v) : null)),
     theme: state.theme,
   };
@@ -1152,6 +1209,7 @@ function syncFields(p) {
   const el = elOf(p); if (!el) return;
   el.querySelector('[data-f="name"]').value = p.name;
   el.querySelector('[data-f="price"]').value = p.price;
+  el.querySelector('[data-f="promo"]').value = p.promo || "";
   el.querySelector('[data-f="size"]').value = SIZES.includes(p.size) ? "" : p.size;
 }
 
@@ -1161,9 +1219,9 @@ function useRecent(ean) {
   let p = state.products.find(o => EAN.resolve(o.code).ean === ean);
   if (!p) {
     p = state.products.find(o => isBlank(o) && qtyOf(o.id) > 0);   // aproveita um produto ainda vazio
-    if (p) Object.assign(p, { code: rc.ean, name: rc.name, price: rc.price, size: rc.size, generated: false, auto: null });
+    if (p) Object.assign(p, { code: rc.ean, name: rc.name, price: rc.price, promo: rc.promo || "", size: rc.size, generated: false, auto: null });
     else {
-      p = newProduct({ code: rc.ean, name: rc.name, price: rc.price, size: rc.size });
+      p = newProduct({ code: rc.ean, name: rc.name, price: rc.price, promo: rc.promo || "", size: rc.size });
       state.products.push(p);
       setQty(p.id, state.slots.filter(v => v == null).length || PER_SHEET);
     }
@@ -1176,7 +1234,7 @@ function useRecent(ean) {
 function useJob(i) {
   const j = hist.jobs[i]; if (!j) return;
   const snap = snapshot();
-  state.products = j.products.map(x => newProduct({ code: x.code, name: x.name || "", price: x.price, size: cleanSize(x.size) }));
+  state.products = j.products.map(x => newProduct({ code: x.code, name: x.name || "", price: x.price, promo: x.promo || "", size: cleanSize(x.size) }));
   state.slots = j.slots.map(k => (k == null ? null : state.products[k].id));
   setTheme(j.theme || "preta");
   state.sel.clear(); state.active = 0; state.page = 0; normalize();
@@ -1201,7 +1259,7 @@ function renderRecent() {
   $("#recs").innerHTML = list.length ? list.slice(0, 60).map(c =>
     `<li class="rec"><button class="rec-main" type="button" data-rec="${c.ean}">` +
       `<span class="rec-name">${esc(cleanName(c.name) || "Sem nome")}</span>` +
-      `<span class="rec-meta">R$ ${esc(c.price)}${c.size ? " · " + esc(c.size) : ""} · ${EAN.fmt(c.ean)} · ${fmtDay(c.last)}</span></button>` +
+      `<span class="rec-meta">R$ ${c.promo ? `${esc(c.promo)} (de ${esc(c.price)})` : esc(c.price)}${c.size ? " · " + esc(c.size) : ""} · ${EAN.fmt(c.ean)} · ${fmtDay(c.last)}</span></button>` +
       `<button class="rec-x" type="button" data-recdel="${c.ean}" aria-label="Tirar dos recentes">×</button></li>`).join("")
     : `<li class="rec-none">Nada encontrado.</li>`;
 }
@@ -1238,8 +1296,8 @@ function fileName() {
   const inUse = state.products.filter(p => qtyOf(p.id));
   const n = used();
   if (inUse.length === 1) {
-    const p = inUse[0], v = parsePrice(p.price);
-    return `VC-Outlet_${fmtPrice(v).replace(/\./g, "").replace(",", "-")}${p.size ? "_" + p.size : ""}_${n}un${state.theme === "branca" ? "_branca" : ""}.pdf`;
+    const p = inUse[0], d = derive(p), v = d.promo ?? d.price;
+    return `VC-Outlet_${fmtPrice(v).replace(/\./g, "").replace(",", "-")}${d.promo != null ? "_promo" : ""}${p.size ? "_" + p.size : ""}_${n}un${state.theme === "branca" ? "_branca" : ""}.pdf`;
   }
   const d = new Date();
   return `VC-Outlet_etiquetas_${n}un_${d.getDate()}-${d.getMonth() + 1}${state.theme === "branca" ? "_branca" : ""}.pdf`;

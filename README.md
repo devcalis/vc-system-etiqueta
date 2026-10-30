@@ -15,6 +15,7 @@ Você digita ou escaneia o código, coloca o nome, o preço e o tamanho, vê a f
    - O Enter do leitor pula pro campo **Nome**, e outro Enter pula pro **Preço**.
    - Se esse código já foi impresso antes, o nome, o preço e o tamanho aparecem sozinhos.
 3. Escolha o **tamanho** e a **quantidade**.
+   - **Promoção (opcional):** preencha o preço promocional. O preço da promoção vira o preço grande, o preço normal sai pequeno e riscado ao lado, e aparece um selo com o desconto (ex.: −25%). A promoção precisa ser menor que o preço normal.
    - Em cima da prévia, escolha a cor da etiqueta: **Preta** ou **Branca**. A escolha vale pra folha inteira e fica salva.
 4. Pra trocar só algumas etiquetas, **toque nelas na prévia da folha** e escolha uma opção:
    - **Produto novo:** cria um produto só pra essas etiquetas.
@@ -34,6 +35,7 @@ Você digita ou escaneia o código, coloca o nome, o preço e o tamanho, vê a f
 Toda folha que você imprime ou baixa fica salva em **Recentes**:
 
 - **Repetir a última folha:** refaz a folha igual, posição por posição. As últimas 10 folhas ficam guardadas.
+- **Promoção:** quando você passa o leitor, a promoção anterior não entra sozinha, porque ela pode já ter acabado. Em vez disso, aparece o botão "Aplicar a promoção de antes".
 - **Produtos recentes:** a lista tem busca por nome ou código, e a busca funciona sem acento. Ela guarda até 300 produtos.
 
 O histórico fica salvo **no navegador daquele computador** (`localStorage`). Por isso, abra sempre o mesmo arquivo, no mesmo navegador. Se os dados do navegador forem limpos, o histórico se perde.
@@ -132,6 +134,7 @@ São todas de licença aberta (GUST Font License e SIL OFL). Os caminhos ficam e
 - O nome do produto e a sequência código → Enter → nome → Enter → preço.
 - Recentes: gravar ao imprimir, preencher pelo código, repetir folha e buscar sem acento.
 - Imprimir: uma página por folha.
+- Promoção: mostrar o desconto, bloquear quando a promoção é maior que o preço, aparecer nos recentes e não entrar sozinha pelo leitor.
 - Preta / Branca: trocar a cor, lembrar a cor ao recarregar e o histórico guardar a cor da folha.
 - PDFs:
   - cada página com exatamente 100 × 150 mm

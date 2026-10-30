@@ -33,6 +33,8 @@ CASES = {
     "t7_nome.pdf": [[2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1]],
     "t8_preta.pdf": [[2] + [1] * 11],
     "t8_branca.pdf": [[2] + [1] * 11],   # etiqueta branca
+    "t9_promo.pdf": [[1] * 12],          # promoção (preço riscado + selo)
+    "t9_promo_branca.pdf": [[1] * 12],
 }
 
 

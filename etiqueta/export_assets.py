@@ -25,7 +25,7 @@ SETS = {
     "digits": ("ui", "0123456789SOBRAimprefolhacm×/% "),
     "brand": ("brand", "OUTLET"),
     # nome do produto (sempre em maiúsculas na etiqueta): letras com acento do português e pontuação comum
-    "name": ("ui", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ -/.,&+()'\"#%°ªº:!?*"),
+    "name": ("ui", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ -/.,&+()'\"#%°ªº:!?*$−"),   # $ e − (menos) pra promoção
 }
 
 
