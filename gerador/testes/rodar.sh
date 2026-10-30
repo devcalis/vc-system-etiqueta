@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 OUT=saida
 mkdir -p "$OUT"
 python3 ../build.py
-for t in test_folha test_nome test_recentes test_impressao; do
+for t in test_folha test_nome test_recentes test_impressao test_tema; do
   printf '▶ %-16s ' "$t"
   node "$t.js" ../../index.html "$OUT" > "$OUT/$t.log" 2>&1 && echo "ok" || { echo "FALHOU (veja $OUT/$t.log)"; exit 1; }
 done

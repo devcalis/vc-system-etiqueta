@@ -15,6 +15,7 @@ Você digita ou escaneia o código, coloca o nome, o preço e o tamanho, vê a f
    - O Enter do leitor pula pro campo **Nome**, e outro Enter pula pro **Preço**.
    - Se esse código já foi impresso antes, o nome, o preço e o tamanho aparecem sozinhos.
 3. Escolha o **tamanho** e a **quantidade**.
+   - Em cima da prévia, escolha a cor da etiqueta: **Preta** ou **Branca**. A escolha vale pra folha inteira e fica salva.
 4. Pra trocar só algumas etiquetas, **toque nelas na prévia da folha** e escolha uma opção:
    - **Produto novo:** cria um produto só pra essas etiquetas.
    - **Um produto da lista:** coloca um produto que já está na folha.
@@ -93,6 +94,7 @@ etiqueta/                   ferramentas em Python (logo, fontes e PDF de referê
 - **PDF escrito na mão, sem biblioteca.** Funciona sem internet, o arquivo é pequeno (cerca de 50 KB por folha) e a medida da página sai exatamente 100 × 150 mm.
 - **Letras em contorno.** O texto entra no arquivo já desenhado, como formas. Por isso a página não depende de fonte instalada nem de baixar fonte. A desvantagem: trocar a fonte exige rodar o `export_assets.py` de novo.
 - **Barras 0,02 mm mais finas.** A largura base de cada barra é 0,25 mm, que corresponde a 2 pontos numa impressora de 203 dpi. Deixar cada barra 0,02 mm mais fina compensa a tinta que espalha no papel e afasta as bordas da divisa entre pontos. Sem isso, a impressora de 203 dpi engrossava cada barra em 1 ponto.
+- **Etiqueta branca desenhada à parte.** O logo prata sumiria no branco, então na versão branca ele vira grafite metálico, com o mesmo brilho em tons escuros. O fundo branco atrás do código de barras vira um contorno fino.
 - **12 por folha é o máximo possível.** Cabe uma coluna de etiquetas deitadas (4 cm de largura) e duas colunas em pé (3 cm cada), somando 10 cm. Sobram só 2 × 3 cm, e todos os cortes vão de ponta a ponta da folha.
 - **Imprimir só no arquivo.** Dentro do claude.ai a página roda num quadro que bloqueia a janela de impressão, então lá só aparece o botão Baixar PDF.
 
@@ -130,6 +132,7 @@ São todas de licença aberta (GUST Font License e SIL OFL). Os caminhos ficam e
 - O nome do produto e a sequência código → Enter → nome → Enter → preço.
 - Recentes: gravar ao imprimir, preencher pelo código, repetir folha e buscar sem acento.
 - Imprimir: uma página por folha.
+- Preta / Branca: trocar a cor, lembrar a cor ao recarregar e o histórico guardar a cor da folha.
 - PDFs:
   - cada página com exatamente 100 × 150 mm
   - todos os códigos de barras lidos em 300 dpi e em 203 dpi

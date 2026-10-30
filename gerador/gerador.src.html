@@ -11,6 +11,7 @@
   --f-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --f-code:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
   --brand-bg:#0B0B0C; --brand-soft:#A9ABAE; /* cor da marca: igual nos dois temas, como na etiqueta */
+  --sw-preta:#0B0B0C; --sw-branca:#FFFFFF; --sw-edge:rgba(128,128,128,.55); /* amostras das cores da etiqueta */
   --r:10px; --r-sm:7px;
   color-scheme:dark;
 }
@@ -125,6 +126,15 @@ button,input{font:inherit;color:inherit}
 
 /* prova */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.eyebrow-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.eyebrow-row .eyebrow{margin:0}
+.seg{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--raise)}
+.seg button{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:999px;background:transparent;
+  color:var(--muted);font-size:13.5px;font-weight:650;cursor:pointer}
+.seg button:hover{color:var(--fg)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.sw{width:13px;height:13px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--sw-edge)}
+.sw-preta{background:var(--sw-preta)} .sw-branca{background:var(--sw-branca)}
 .label-mat{background:var(--mat);border-radius:var(--r-sm);padding:clamp(14px,4vw,34px);display:grid;place-items:center}
 .label-mat svg{width:100%;max-width:520px;height:auto;display:block;box-shadow:0 10px 30px rgba(0,0,0,.35);border-radius:2px}
 .label-cap{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap}
@@ -218,7 +228,13 @@ button,input{font:inherit;color:inherit}
 
     <div class="proof">
       <section class="card c-label" aria-label="Prévia da etiqueta">
-        <p class="eyebrow">Etiqueta</p>
+        <div class="eyebrow-row">
+          <p class="eyebrow">Etiqueta</p>
+          <div class="seg" role="group" aria-label="Cor da etiqueta">
+            <button type="button" data-theme-pick="preta" aria-pressed="true"><span class="sw sw-preta"></span>Preta</button>
+            <button type="button" data-theme-pick="branca" aria-pressed="false"><span class="sw sw-branca"></span>Branca</button>
+          </div>
+        </div>
         <div class="label-mat" id="labelPreview"></div>
         <div class="label-cap"><span id="labelWho">Produto 1</span><span>tamanho real 40 × 30 mm</span></div>
       </section>
@@ -282,8 +298,20 @@ const LAYOUT = {
   plain: { priceBase: 14.45, priceCap: 6.4 },
   named: { priceBase: 13.8, priceCap: 5.5, nameBase: 20.4, nameCap: 1.45, nameMin: 1.1 },
 };
-const T = { bg: "#0B0B0C", ink: "#F5F5F4", name: "#DDDEDF", soft: "#A9ABAE", rule: "#4A4B4D", ruleW: 0.18,
-            chipStroke: "#BFC1C3", chipText: "#F5F5F4", panel: "#FFFFFF", bars: "#000000" };
+/* Duas versões da etiqueta. A branca não é só a preta invertida: o logo prata sumiria
+   no branco, então vira grafite metálico (mesmo desenho de brilho, tons escuros), e o
+   painel branco do código vira um contorno fino. */
+const THEMES = {
+  preta: { bg: "#0B0B0C", ink: "#F5F5F4", name: "#DDDEDF", soft: "#A9ABAE", rule: "#4A4B4D", ruleW: 0.18,
+           chipStroke: "#BFC1C3", chipText: "#F5F5F4", panel: "#FFFFFF", panelStroke: null, bars: "#000000",
+           grad: null /* = degradê prata do logo original */ },
+  branca: { bg: "#FFFFFF", ink: "#0B0B0C", name: "#26272A", soft: "#5E6166", rule: "#B4B7BB", ruleW: 0.18,
+            chipStroke: "#26272A", chipText: "#0B0B0C", panel: null, panelStroke: "#BFC2C6", bars: "#000000",
+            grad: [[0, "#45484C"], [0.12, "#3A3C40"], [0.25, "#6A6E73"], [0.34, "#8C9095"], [0.43, "#666A6F"],
+                   [0.55, "#45484C"], [0.75, "#2C2E31"], [1, "#1B1C1E"]] },
+};
+let T = THEMES.preta;
+const gradOf = () => T.grad || A.logo.gradient;
 
 /* Folha 10×15: 5 deitadas + 6 em pé + 1 deitada = 12 (máximo possível). [x, y, rotação] */
 const PAGE_W = 100, PAGE_H = 150, PER_SHEET = 12;
@@ -408,7 +436,7 @@ function text(rec, k, s, x, y, size, color, { track = 0, anchor = "start" } = {}
   return w;
 }
 
-function monogram(rec, x, y, h, flat) {
+function monogram(rec, x, y, h, flat, stops) {
   const p = pathB(rec.m);
   for (const poly of A.logo.polys) {
     p.M(x + poly[0] * h, y + poly[1] * h);
@@ -416,12 +444,12 @@ function monogram(rec, x, y, h, flat) {
     p.Z();
   }
   if (flat) fill(rec, p.segs, flat);
-  else rec.ops.push({ t: "grad", segs: p.segs, p0: apply(rec.m, x, y + h), p1: apply(rec.m, x, y), stops: A.logo.gradient });
+  else rec.ops.push({ t: "grad", segs: p.segs, p0: apply(rec.m, x, y + h), p1: apply(rec.m, x, y), stops: stops || gradOf() });
   return A.logo.aspect * h;
 }
 
 function lockup(rec, colors = {}) {
-  const w = monogram(rec, X0, ROW1_Y, ROW1_H, colors.mono);
+  const w = monogram(rec, X0, ROW1_Y, ROW1_H, colors.mono, colors.grad);
   const dx = X0 + w + 1.25;
   const p = pathB(rec.m); p.M(dx, ROW1_Y + 0.9); p.L(dx, ROW1_Y + ROW1_H - 0.9);
   rec.ops.push({ t: "stroke", segs: p.segs, color: colors.rule || T.rule, width: T.ruleW });
@@ -465,7 +493,8 @@ function price(rec, v, L) {
 function barcode(rec, ean) {
   const pp = pathB(rec.m);
   rrectP(pp, PANEL[0], PANEL[1], PANEL[2] - PANEL[0], PANEL[3] - PANEL[1], 1.0);
-  fill(rec, pp.segs, T.panel);
+  if (T.panel) fill(rec, pp.segs, T.panel);
+  if (T.panelStroke) rec.ops.push({ t: "stroke", segs: pp.segs, color: T.panelStroke, width: 0.2 });
   if (!ean) return;
   const bits = EAN.encode(ean), p = pathB(rec.m);
   for (let i = 0; i < 95;) {
@@ -576,12 +605,18 @@ async function toPDF(pages, title) {
   const enc = new TextEncoder();
   const objs = {}; let next = 1;
   const id = () => next++;
-  const catalog = id(), pagesId = id(), info = id(), fn = id();
+  const catalog = id(), pagesId = id(), info = id();
 
-  const stops = A.logo.gradient;
-  const sub = [];
-  for (let i = 0; i < stops.length - 1; i++) sub.push(`<< /FunctionType 2 /Domain [0 1] /C0 [${rgb(stops[i][1])}] /C1 [${rgb(stops[i + 1][1])}] /N 1 >>`);
-  objs[fn] = `<< /FunctionType 3 /Domain [0 1] /Functions [${sub.join(" ")}] /Bounds [${stops.slice(1, -1).map(s => s[0]).join(" ")}] /Encode [${sub.map(() => "0 1").join(" ")}] >>`;
+  const fns = new Map();
+  const fnFor = stops => {
+    const key = JSON.stringify(stops);
+    if (fns.has(key)) return fns.get(key);
+    const fid = id(), sub = [];
+    for (let i = 0; i < stops.length - 1; i++) sub.push(`<< /FunctionType 2 /Domain [0 1] /C0 [${rgb(stops[i][1])}] /C1 [${rgb(stops[i + 1][1])}] /N 1 >>`);
+    objs[fid] = `<< /FunctionType 3 /Domain [0 1] /Functions [${sub.join(" ")}] /Bounds [${stops.slice(1, -1).map(s => s[0]).join(" ")}] /Encode [${sub.map(() => "0 1").join(" ")}] >>`;
+    fns.set(key, fid);
+    return fid;
+  };
 
   const kids = [];
   for (const ops of pages) {
@@ -593,7 +628,7 @@ async function toPDF(pages, title) {
       else if (o.t === "stroke") cs += `${rgb(o.color)} RG ${num(o.width)} w\n${pdfPath(o.segs)}\nS\n`;
       else {
         const sid = id();
-        objs[sid] = `<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [${[...o.p0, ...o.p1].map(num).join(" ")}] /Function ${fn} 0 R /Extend [true true] >>`;
+        objs[sid] = `<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [${[...o.p0, ...o.p1].map(num).join(" ")}] /Function ${fnFor(o.stops)} 0 R /Extend [true true] >>`;
         cs += `q\n${pdfPath(o.segs)}\nW n\n/Sh${sh.length} sh\nQ\n`;
         sh.push(sid);
       }
@@ -638,7 +673,8 @@ async function toPDF(pages, title) {
 const KEY = "vc-etiquetas-v2", KEY_V1 = "vc-etiquetas-v1";
 let seq = 1;
 const newProduct = (o = {}) => ({ id: seq++, code: "", name: "", price: "", size: "", generated: false, ...o });
-const state = { products: [], slots: [], active: 0, page: 0, sel: new Set() };
+const state = { products: [], slots: [], active: 0, page: 0, sel: new Set(), theme: "preta" };
+function setTheme(name) { state.theme = THEMES[name] ? name : "preta"; T = THEMES[state.theme]; }
 const byId = id => state.products.find(p => p.id === id);
 const qtyOf = id => state.slots.reduce((n, v) => n + (v === id ? 1 : 0), 0);
 const sheetCount = () => Math.max(1, Math.ceil(state.slots.length / PER_SHEET));
@@ -690,6 +726,7 @@ function load() {
       map.set(p.id, np.id); state.products.push(np);
     }
     state.slots = s.slots.map(v => (map.has(v) ? map.get(v) : null));
+    setTheme(s.theme);
     normalize(); return;
   }
   let v1 = null;
@@ -711,6 +748,7 @@ function saveNow() {
     localStorage.setItem(KEY, JSON.stringify({
       products: state.products.map(({ id, code, name, price, size, generated }) => ({ id, code, name, price, size, generated })),
       slots: state.slots,
+      theme: state.theme,
     }));
   } catch (e) { /* sem armazenamento: segue sem lembrar */ }
 }
@@ -867,6 +905,7 @@ function renderPreview() {
     $("#prev").disabled = state.page === 0;
     $("#next").disabled = state.page >= sheets - 1;
     renderSel();
+    document.querySelectorAll("[data-theme-pick]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themePick === state.theme)));
 
     // totais e estado dos botões
     const n = used(), free = state.slots.length - n;
@@ -1001,13 +1040,14 @@ $("#items").addEventListener("click", e => {
 });
 
 let undoT = 0;
-const snapshot = () => ({ products: state.products.slice(), slots: state.slots.slice(), active: state.active });
+const snapshot = () => ({ products: state.products.slice(), slots: state.slots.slice(), active: state.active, theme: state.theme });
 function showUndo(snap, text) {
   const u = $("#undo");
   u.innerHTML = `${esc(text)} <button class="btn-link" type="button" id="undoBtn">Desfazer</button>`;
   u.hidden = false;
   $("#undoBtn").onclick = () => {
     state.products = snap.products; state.slots = snap.slots; state.active = snap.active;
+    if (snap.theme) setTheme(snap.theme);
     u.hidden = true; normalize(); renderItems(); renderPreview(); persist();
   };
   clearTimeout(undoT); undoT = setTimeout(() => (u.hidden = true), 8000);
@@ -1041,6 +1081,11 @@ $("#selOpts").addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && state.sel.size) { state.sel.clear(); renderPreview(); }
+});
+$(".seg").addEventListener("click", e => {
+  const b = e.target.closest("[data-theme-pick]"); if (!b || b.dataset.themePick === state.theme) return;
+  setTheme(b.dataset.themePick);
+  renderPreview(); persist();
 });
 $("#prev").addEventListener("click", () => { state.page--; renderPreview(); });
 $("#next").addEventListener("click", () => { state.page++; renderPreview(); });
@@ -1078,8 +1123,9 @@ function record() {
     ts, n: state.slots.filter(v => ids.includes(v)).length,
     products: inUse.map(p => ({ code: derive(p).ean, name: String(p.name).trim(), price: fmtPrice(derive(p).price), size: p.size })),
     slots: state.slots.map(v => (ids.includes(v) ? ids.indexOf(v) : null)),
+    theme: state.theme,
   };
-  const same = hist.jobs[0] && JSON.stringify([hist.jobs[0].products, hist.jobs[0].slots]) === JSON.stringify([job.products, job.slots]);
+  const same = hist.jobs[0] && JSON.stringify([hist.jobs[0].products, hist.jobs[0].slots, hist.jobs[0].theme || "preta"]) === JSON.stringify([job.products, job.slots, job.theme]);
   if (same) hist.jobs[0].ts = ts; else hist.jobs.unshift(job);
   hist.jobs = hist.jobs.slice(0, 10);
   saveHist();
@@ -1132,6 +1178,7 @@ function useJob(i) {
   const snap = snapshot();
   state.products = j.products.map(x => newProduct({ code: x.code, name: x.name || "", price: x.price, size: cleanSize(x.size) }));
   state.slots = j.slots.map(k => (k == null ? null : state.products[k].id));
+  setTheme(j.theme || "preta");
   state.sel.clear(); state.active = 0; state.page = 0; normalize();
   renderItems(); renderPreview(); persist();
   showUndo(snap, `Folha de ${fmtWhen(j.ts)} carregada.`);
@@ -1147,7 +1194,7 @@ function renderRecent() {
     const names = j.products.map(x => cleanName(x.name) || `R$ ${x.price}`);
     const what = names[0] + (names.length > 1 ? ` + ${plural(names.length - 1, "outro", "outros")}` : "");
     return `<li><button class="job" type="button" data-job="${i}"><b>${i === 0 ? "Repetir a última folha" : esc(what)}</b>` +
-      `<span>${fmtWhen(j.ts)} · ${plural(j.n, "etiqueta", "etiquetas")}${i === 0 ? " · " + esc(what) : ""}</span></button></li>`;
+      `<span>${fmtWhen(j.ts)} · ${plural(j.n, "etiqueta", "etiquetas")}${j.theme === "branca" ? " · branca" : ""}${i === 0 ? " · " + esc(what) : ""}</span></button></li>`;
   }).join("");
   const q = fold($("#recSearch").value.trim()), qd = q.replace(/\D/g, "");
   const list = hist.catalog.filter(c => !q || fold(c.name).includes(q) || (qd && c.ean.includes(qd)));
@@ -1192,10 +1239,10 @@ function fileName() {
   const n = used();
   if (inUse.length === 1) {
     const p = inUse[0], v = parsePrice(p.price);
-    return `VC-Outlet_${fmtPrice(v).replace(/\./g, "").replace(",", "-")}${p.size ? "_" + p.size : ""}_${n}un.pdf`;
+    return `VC-Outlet_${fmtPrice(v).replace(/\./g, "").replace(",", "-")}${p.size ? "_" + p.size : ""}_${n}un${state.theme === "branca" ? "_branca" : ""}.pdf`;
   }
   const d = new Date();
-  return `VC-Outlet_etiquetas_${n}un_${d.getDate()}-${d.getMonth() + 1}.pdf`;
+  return `VC-Outlet_etiquetas_${n}un_${d.getDate()}-${d.getMonth() + 1}${state.theme === "branca" ? "_branca" : ""}.pdf`;
 }
 $("#download").addEventListener("click", async () => {
   const btn = $("#download"), msg = $("#dlMsg");
@@ -1253,7 +1300,7 @@ if (CAN_PRINT) {
 /* ═══════════════════════════ 11. INÍCIO ═══════════════════════════ */
 (function mark() {
   const ops = [], rec = { ops, m: [1, 0, 0, 1, -X0, -ROW1_Y] };
-  const right = lockup(rec, { rule: "currentColor", word: "currentColor" });
+  const right = lockup(rec, { rule: "currentColor", word: "currentColor", grad: A.logo.gradient });
   $("#mark").innerHTML = toSVG(ops, right - X0, ROW1_H, { cls: "mark" });
 })();
 load();
@@ -1261,5 +1308,5 @@ renderRecent();
 $("#recent").open = hist.catalog.length > 0;
 renderItems();
 renderPreview();
-window.vcEtiquetas = { buildPDF, state, EAN, parsePrice, setQty, normalize, renderItems, renderPreview, record, hist: () => hist };
+window.vcEtiquetas = { buildPDF, state, EAN, parsePrice, setQty, normalize, renderItems, renderPreview, record, setTheme, hist: () => hist };
 </script>
