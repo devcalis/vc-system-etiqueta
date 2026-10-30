@@ -1,0 +1,1265 @@
+<title>Etiquetas VC Outlet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: bancada — à esquerda as peças (código, preço, tamanho, quantidade);
+   à direita a prova de impressão (etiqueta ampliada + folha 10×15 + baixar). */
+:root{
+  --bg:#0D0E10; --panel:#16171A; --raise:#1F2124; --line:#2C2F33; --fg:#ECEDEF; --muted:#8E9297;
+  --accent:#DCDFE2; --on-accent:#0D0E10; --mat:#26282C;
+  --ok:#55C08A; --err:#F27A64; --warn:#E5B94E; --sel:#3D8BFF;
+  --silver:linear-gradient(180deg,#F4F5F6 0%,#C9CCD0 55%,#9EA2A7 100%);
+  --f-ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-code:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --brand-bg:#0B0B0C; --brand-soft:#A9ABAE; /* cor da marca: igual nos dois temas, como na etiqueta */
+  --r:10px; --r-sm:7px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#E8E9EB; --panel:#FFFFFF; --raise:#F2F3F4; --line:#D2D5D9; --fg:#121315; --muted:#5C6066;
+  --accent:#121315; --on-accent:#F4F5F6; --mat:#D9DBDE;
+  --ok:#1E8752; --err:#C2402B; --warn:#8F6400; color-scheme:light } }
+:root[data-theme="light"]{
+  --bg:#E8E9EB; --panel:#FFFFFF; --raise:#F2F3F4; --line:#D2D5D9; --fg:#121315; --muted:#5C6066;
+  --accent:#121315; --on-accent:#F4F5F6; --mat:#D9DBDE;
+  --ok:#1E8752; --err:#C2402B; --warn:#8F6400; color-scheme:light }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* topo */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+#mark{background:var(--brand-bg);color:var(--brand-soft);padding:7px 11px;border-radius:7px;display:block}
+.top .mark{height:26px;width:auto;display:block}
+.top h1{font-size:15px;font-weight:600;letter-spacing:.02em;margin:0}
+.top .spec{margin-left:auto;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* grade principal */
+.grid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:28px;align-items:start}
+.proof{display:grid;gap:18px;min-width:0}
+@media (min-height:1000px) and (min-width:861px){ .proof{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)} }
+.editor{display:grid;gap:14px;min-width:0}
+
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+
+/* cartão de produto */
+.item{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px}
+.item[data-active="true"]{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.item-head{display:flex;align-items:center;gap:10px}
+.item-n{font-weight:650;font-size:14px}
+.item-sum{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.item-head .remove{margin-left:auto}
+.field{display:grid;gap:6px;min-width:0}
+.field>label,.field>.lbl{font-size:12.5px;font-weight:600;color:var(--muted)}
+.inp{width:100%;min-height:44px;background:var(--raise);border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;font-size:16px}
+.inp:focus{border-color:var(--accent);outline:none}
+.code-row{display:flex;gap:8px}
+.code-row .inp{font-family:var(--f-code);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.money{position:relative}
+.money span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.money .inp{padding-left:38px;font-variant-numeric:tabular-nums;font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.status{margin:0;font-size:13px;display:flex;gap:8px;align-items:flex-start;color:var(--muted);min-height:19px}
+.status::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px;background:var(--muted)}
+.status[data-kind="ok"]::before{background:var(--ok)}
+.status[data-kind="err"]{color:var(--err)} .status[data-kind="err"]::before{background:var(--err)}
+.status[data-kind="warn"]{color:var(--warn)} .status[data-kind="warn"]::before{background:var(--warn)}
+.status .mono{font-family:var(--f-code);color:var(--fg);letter-spacing:.03em}
+.status button{margin-left:4px}
+.ferr{margin:0;font-size:12.5px;color:var(--err);min-height:0}
+.opt{font-weight:500;opacity:.8}
+.add-row{display:flex;gap:8px;flex-wrap:wrap}
+.add-row .add{flex:1 1 220px;width:auto}
+.btn-ghost{background:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--fg)}
+/* recentes */
+.recent{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.recent summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:650;font-size:14px;min-height:48px}
+.recent summary::-webkit-details-marker{display:none}
+.recent summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-3px 4px 0 10px}
+.recent[open] summary::after{transform:rotate(-135deg);margin-top:3px}
+.rc-count{color:var(--muted);font-weight:500;margin-left:4px;font-variant-numeric:tabular-nums}
+.recent-body{padding:0 16px 16px;display:grid;gap:14px}
+.recent-body>div{display:grid;gap:8px}
+.sub{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+.jobs,.recs{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.recs{max-height:292px;overflow:auto;overscroll-behavior:contain;padding-right:2px}
+.rec{display:flex;gap:4px}
+.job{width:100%}
+.rec-main,.job{flex:1;min-width:0;text-align:left;background:var(--raise);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 11px;cursor:pointer;display:grid;gap:1px}
+.rec-main:hover,.job:hover{border-color:var(--muted)}
+.rec-name,.job b{font-weight:650;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-meta,.job span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-x{flex:none;width:44px;border:1px solid transparent;background:none;color:var(--muted);border-radius:var(--r-sm);cursor:pointer;font-size:18px;line-height:1}
+.rec-x:hover{border-color:var(--line);color:var(--fg)}
+.rec-none{font-size:13px;color:var(--muted);padding:4px 2px}
+
+.sizes{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-width:44px;min-height:40px;padding:0 10px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--raise);font-weight:650;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.sizes .inp{width:84px;min-height:40px;text-transform:uppercase;font-weight:650;font-size:16px}
+.sizes .inp::placeholder{text-transform:none;font-weight:500}
+
+.stepper{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--raise);overflow:hidden}
+.stepper button{width:44px;border:0;background:transparent;font-size:18px;cursor:pointer;color:var(--fg)}
+.stepper button:hover{background:var(--line)}
+.stepper input{flex:1;min-width:0;width:100%;min-height:42px;border:0;background:transparent;text-align:center;font-weight:650;font-variant-numeric:tabular-nums;font-size:16px}
+.stepper input:focus{outline:none}
+
+.btn{min-height:44px;padding:0 16px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--raise);font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn-sm{min-height:34px;padding:0 10px;font-size:13px}
+.btn-link{border:0;background:none;padding:4px 2px;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.btn-link:hover{color:var(--fg)}
+.btn-primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-size:15px;min-height:48px;padding:0 22px}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.add{border-style:dashed;background:transparent;width:100%;color:var(--muted)}
+.add:hover{color:var(--fg)}
+.help{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
+
+/* prova */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.label-mat{background:var(--mat);border-radius:var(--r-sm);padding:clamp(14px,4vw,34px);display:grid;place-items:center}
+.label-mat svg{width:100%;max-width:520px;height:auto;display:block;box-shadow:0 10px 30px rgba(0,0,0,.35);border-radius:2px}
+.label-cap{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.sheet-wrap{display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr);gap:20px;align-items:start}
+.sheet-stage{position:relative}
+.slots{position:absolute;inset:0}
+.slot{position:absolute;margin:0;padding:0;border:2px solid transparent;background:transparent;cursor:pointer;border-radius:3px}
+.slot:hover{border-color:var(--sel);border-style:dashed}
+.slot[aria-pressed="true"]{border-color:var(--sel);border-style:solid;background:color-mix(in srgb,var(--sel) 24%,transparent)}
+.slot:focus-visible{outline:2px solid var(--sel);outline-offset:1px}
+.slot-n{position:absolute;left:3px;top:3px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--sel);color:#fff;
+  font-size:11px;font-weight:700;line-height:18px;text-align:center;display:none;font-variant-numeric:tabular-nums}
+.slot:hover .slot-n,.slot:focus-visible .slot-n,.slot[aria-pressed="true"] .slot-n{display:block}
+.sel-hint{margin-top:10px}
+.selpanel{border:1px solid var(--sel);border-radius:var(--r-sm);padding:12px;display:grid;gap:10px;background:color-mix(in srgb,var(--sel) 9%,var(--panel))}
+.sel-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sel-head b{font-size:14px}
+.sel-opts{display:flex;flex-wrap:wrap;gap:6px}
+.sel-opts .btn{white-space:normal;text-align:left;min-height:36px}
+.sel-new{background:var(--sel);border-color:var(--sel);color:#fff}
+.sheet-svg{background:var(--mat);border-radius:var(--r-sm);padding:12px}
+.sheet-svg svg{width:100%;height:auto;display:block;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total{font-size:26px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.15}
+.total small{display:block;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:2px}
+.actions{display:grid;gap:12px;align-content:start}
+.dl-msg{font-size:13px;margin:0;min-height:19px;color:var(--muted)}
+.dl-msg[data-kind="err"]{color:var(--err)} .dl-msg[data-kind="ok"]{color:var(--ok)}
+.tips{margin:4px 0 0;padding:12px 0 0;border-top:1px solid var(--line);list-style:none;display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.tips b{color:var(--fg);font-weight:600}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .proof{display:contents}
+  .c-label{order:-1}
+  .top .spec{margin-left:0;width:100%}
+}
+@media (max-width:460px){
+  .sheet-wrap{grid-template-columns:minmax(0,1fr)}
+  .sheet-svg{max-width:300px}
+  .row2{grid-template-columns:1fr}
+}
+/* impressão direta (versão do computador): só as folhas, no tamanho exato */
+#printArea{display:none}
+@page{size:100mm 150mm;margin:0}
+@media print{
+  :root{padding:0!important}
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  .wrap{display:none!important}
+  #printArea{display:block}
+  .pp{width:100mm;height:150mm;overflow:hidden;break-after:page;page-break-after:always}
+  .pp:last-child{break-after:auto;page-break-after:auto}
+  .pp svg{width:100mm;height:150mm;display:block}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+@media (prefers-reduced-motion:no-preference){ .btn,.chip,.inp{transition:background-color .15s,border-color .15s,color .15s} }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span id="mark" aria-label="VC Outlet"></span>
+    <h1>Etiquetas</h1>
+    <span class="spec">4 × 3 cm · folha 10 × 15 cm · 12 por folha</span>
+  </header>
+
+  <main class="grid">
+    <section class="editor" aria-label="Produtos">
+      <p class="help">Clique no campo do código e passe o leitor, ou digite. O nome do produto é opcional. O código de barras é criado na hora. Sem código? Digite a referência da peça (ex.: 1402) ou toque em <b>Gerar novo</b>. Pra mudar só algumas etiquetas, toque nelas na folha.</p>
+      <details class="recent" id="recent">
+        <summary><span>Recentes <span class="rc-count" id="recCount"></span></span></summary>
+        <div class="recent-body">
+          <p class="help" id="recEmpty">Quando você imprimir ou baixar uma folha, os produtos dela ficam salvos aqui. Da próxima vez, toque num deles pra usar de novo. Ou passe o leitor: nome, preço e tamanho aparecem sozinhos.</p>
+          <div id="jobsWrap" hidden>
+            <p class="sub">Folhas recentes</p>
+            <ul class="jobs" id="jobs"></ul>
+          </div>
+          <div id="recsWrap" hidden>
+            <p class="sub">Produtos recentes</p>
+            <input class="inp" id="recSearch" type="search" autocomplete="off" placeholder="Buscar por nome ou código" aria-label="Buscar nos produtos recentes">
+            <ul class="recs" id="recs"></ul>
+          </div>
+        </div>
+      </details>
+      <div id="items" class="editor"></div>
+      <div class="add-row">
+        <button id="add" class="btn add" type="button">+ Adicionar outro produto na folha</button>
+        <button id="clear" class="btn btn-ghost" type="button">Começar folha nova</button>
+      </div>
+      <p id="undo" class="help" hidden></p>
+    </section>
+
+    <div class="proof">
+      <section class="card c-label" aria-label="Prévia da etiqueta">
+        <p class="eyebrow">Etiqueta</p>
+        <div class="label-mat" id="labelPreview"></div>
+        <div class="label-cap"><span id="labelWho">Produto 1</span><span>tamanho real 40 × 30 mm</span></div>
+      </section>
+
+      <section class="card c-sheet" aria-label="Folha para imprimir">
+        <p class="eyebrow">Folha para imprimir</p>
+        <div class="sheet-wrap">
+          <div>
+            <div class="sheet-svg"><div class="sheet-stage">
+              <div id="sheetPreview"></div>
+              <div class="slots" id="slots" role="group" aria-label="Etiquetas da folha atual"></div>
+            </div></div>
+            <p class="help sel-hint" id="selHint">Toque nas etiquetas da folha pra trocar só algumas. <button class="btn-link" type="button" id="selAll">Selecionar a folha toda</button></p>
+            <div class="pager" id="pager" hidden>
+              <button class="btn btn-sm" id="prev" type="button" aria-label="Folha anterior">‹</button>
+              <span id="pageInfo">Folha 1 de 1</span>
+              <button class="btn btn-sm" id="next" type="button" aria-label="Próxima folha">›</button>
+            </div>
+          </div>
+          <div class="actions">
+            <div class="selpanel" id="selPanel" hidden>
+              <div class="sel-head"><b id="selCount">0 etiquetas selecionadas</b><button class="btn-link" type="button" id="selClear">Limpar</button></div>
+              <p class="help" style="margin:0">Trocar por:</p>
+              <div class="sel-opts" id="selOpts"></div>
+            </div>
+            <div class="total" id="total">12 etiquetas<small>1 folha</small></div>
+            <button class="btn btn-primary" id="print" type="button" hidden>Imprimir</button>
+            <button class="btn btn-primary" id="download" type="button">Baixar PDF</button>
+            <p class="help" id="printNote" hidden>Pra imprimir direto, sem baixar, use o gerador do computador da loja (arquivo <b>VC-Outlet-Etiquetas.html</b>). Aqui o navegador não deixa abrir a impressão.</p>
+            <p class="dl-msg" id="dlMsg" aria-live="polite"></p>
+            <ul class="tips">
+              <li id="printTip" hidden>Na janela de impressão: papel <b>10 × 15 cm</b> (ou 4 × 6 pol.), margens <b>nenhuma</b>, escala <b>100%</b>.</li>
+              <li>Imprima em <b>tamanho real (100%)</b>, nunca “ajustar à página”.</li>
+              <li>Use impressão <b>sem margem</b>. Se tiver “expansão”, deixe no mínimo.</li>
+              <li>Corte <b>no meio da linha cinza</b>. A sobra (2 × 3 cm) vai fora.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<div id="printArea" aria-hidden="true"></div>
+
+<script>
+"use strict";
+/* ═══════════════════════════ 1. ASSETS (logo + glifos em curva) ═══════════════════════════ */
+const A = /*__ASSETS__*/null;
+const F = A.fonts;
+
+/* ═══════════════════════════ 2. GEOMETRIA DA ETIQUETA (mm, Y pra cima) ═══════════════════════════
+   Mesmos números do PDF aprovado (label.py). */
+const W = 40, H = 30, M = 2.0, X0 = M, X1 = W - M;
+const PANEL = [M, M, W - M, 12.3];
+const MOD = 0.25, BWR = 0.02, BAR_X = 8.75, BAR_Y0 = 4.8, BAR_Y1 = 11.4, GUARD_Y0 = BAR_Y0 - 5 * MOD;
+const DIGIT_BASE = 2.75, DIGIT_CAP = 1.75;
+const ROW1_Y = 22.7, ROW1_H = 5.3, PRICE_MAXW = X1 - X0;
+/* Dois arranjos: sem nome = a etiqueta aprovada, idêntica. Com nome = o nome entra
+   embaixo do VC | OUTLET e o preço desce/encolhe um pouco pra caber. */
+const LAYOUT = {
+  plain: { priceBase: 14.45, priceCap: 6.4 },
+  named: { priceBase: 13.8, priceCap: 5.5, nameBase: 20.4, nameCap: 1.45, nameMin: 1.1 },
+};
+const T = { bg: "#0B0B0C", ink: "#F5F5F4", name: "#DDDEDF", soft: "#A9ABAE", rule: "#4A4B4D", ruleW: 0.18,
+            chipStroke: "#BFC1C3", chipText: "#F5F5F4", panel: "#FFFFFF", bars: "#000000" };
+
+/* Folha 10×15: 5 deitadas + 6 em pé + 1 deitada = 12 (máximo possível). [x, y, rotação] */
+const PAGE_W = 100, PAGE_H = 150, PER_SHEET = 12;
+const SLOTS = [[0,120,0],[0,90,0],[0,60,0],[0,30,0],[0,0,0],
+               [40,110,90],[40,70,90],[40,30,90],[70,110,90],[70,70,90],[70,30,90],[40,0,0]];
+const CUT_LINES = [[40,0,40,150],[0,120,40,120],[0,90,40,90],[0,60,40,60],[0,30,40,30],
+                   [40,30,100,30],[70,30,70,150],[40,110,100,110],[40,70,100,70],[80,0,80,30]];
+const CUT = { color: "#8E9093", width: 0.2 };
+
+/* ═══════════════════════════ 3. EAN-13 ═══════════════════════════ */
+const EAN = (() => {
+  const L = ["0001101","0011001","0010011","0111101","0100011","0110001","0101111","0111011","0110111","0001011"];
+  const G = ["0100111","0110011","0011011","0100001","0011101","0111001","0000101","0010001","0001001","0010111"];
+  const R = ["1110010","1100110","1101100","1000010","1011100","1001110","1010000","1000100","1001000","1110100"];
+  const PAR = ["LLLLLL","LLGLGG","LLGGLG","LLGGGL","LGLLGG","LGGLLG","LGGGLL","LGLGLG","LGLGGL","LGGLGL"];
+  const check = d12 => { let s = 0; for (let i = 0; i < 12; i++) s += +d12[i] * (i % 2 ? 3 : 1); return (10 - s % 10) % 10; };
+  const upcOk = d12 => { let s = 0; for (let i = 0; i < 11; i++) s += +d12[i] * (i % 2 ? 1 : 3); return (10 - s % 10) % 10 === +d12[11]; };
+  const encode = c => {
+    const p = PAR[+c[0]];
+    let b = "101";
+    for (let i = 0; i < 6; i++) b += (p[i] === "L" ? L : G)[+c[1 + i]];
+    b += "01010";
+    for (let i = 7; i < 13; i++) b += R[+c[i]];
+    return b + "101";
+  };
+  const isGuard = i => i < 3 || (i >= 45 && i < 50) || i >= 92;
+  const fmt = e => `${e[0]} ${e.slice(1, 7)} ${e.slice(7)}`;
+  const random = () => {
+    const a = new Uint8Array(11);
+    (self.crypto || window.crypto).getRandomValues(a);
+    const body = "2" + Array.from(a, v => v % 10).join("");
+    return body + check(body);
+  };
+  /* Interpreta o que foi digitado/escaneado → EAN-13 pronto ou erro explicado. */
+  const resolve = raw => {
+    const d = String(raw || "").replace(/\D/g, "");
+    if (!d) return { ean: null, kind: "warn", msg: "Digite o código, passe o leitor ou toque em Gerar novo." };
+    if (d.length > 13) return { ean: null, kind: "err", msg: `O código tem ${d.length} números. O máximo é 13.` };
+    if (d.length === 13) {
+      const cd = check(d.slice(0, 12));
+      if (cd === +d[12]) return { ean: d, kind: "ok", msg: "Código válido." };
+      return { ean: null, kind: "err", msg: `Esse código não fecha: o último número deveria ser ${cd}. Confira se digitou certo.`,
+               fix: d.slice(0, 12) + cd };
+    }
+    if (d.length === 12) {
+      if (upcOk(d)) return { ean: "0" + d, kind: "ok", msg: "Código de 12 números (UPC, de produto importado) aceito." };
+      const cd = check(d);
+      return { ean: d + cd, kind: "ok", msg: `Faltava o último número. Calculei: ${cd}.` };
+    }
+    const body = "2" + d.padStart(11, "0");
+    const e = body + check(body);
+    return { ean: e, kind: "ok", msg: "Código interno da loja:", code: fmt(e) };
+  };
+  return { check, encode, isGuard, fmt, random, resolve };
+})();
+
+/* ═══════════════════════════ 4. PREÇO ═══════════════════════════ */
+function parsePrice(raw) {
+  let s = String(raw || "").replace(/[^\d.,]/g, "");
+  if (!s) return null;
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  else { const p = s.split("."); if (p.length > 2) s = p.slice(0, -1).join("") + "." + p[p.length - 1]; }
+  const v = Number(s);
+  if (!isFinite(v) || v <= 0 || v >= 100000) return null;
+  return Math.round(v * 100) / 100;
+}
+function brl(v) {
+  const [i, c] = v.toFixed(2).split(".");
+  return [i.replace(/\B(?=(\d{3})+(?!\d))/g, "."), c];
+}
+const fmtPrice = v => { const [i, c] = brl(v); return `${i},${c}`; };
+
+/* ═══════════════════════════ 5. DESENHO → LISTA DE OPERAÇÕES ═══════════════════════════
+   Tudo vira operações em coordenadas da página (mm). Dois "motores" consomem a mesma
+   lista: SVG (prévia) e PDF (download) — o que você vê é o que imprime. */
+const apply = (m, x, y) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+function pathB(m) {
+  const segs = [];
+  return {
+    segs,
+    M: (x, y) => segs.push(["M", ...apply(m, x, y)]),
+    L: (x, y) => segs.push(["L", ...apply(m, x, y)]),
+    C: (a, b, c, d, e, f) => segs.push(["C", ...apply(m, a, b), ...apply(m, c, d), ...apply(m, e, f)]),
+    Z: () => segs.push(["Z"]),
+  };
+}
+function rectP(p, x, y, w, h) { p.M(x, y); p.L(x + w, y); p.L(x + w, y + h); p.L(x, y + h); p.Z(); }
+function rrectP(p, x, y, w, h, r) {
+  const k = r * 0.4477;
+  p.M(x + r, y); p.L(x + w - r, y); p.C(x + w - k, y, x + w, y + k, x + w, y + r);
+  p.L(x + w, y + h - r); p.C(x + w, y + h - k, x + w - k, y + h, x + w - r, y + h);
+  p.L(x + r, y + h); p.C(x + k, y + h, x, y + h - k, x, y + h - r);
+  p.L(x, y + r); p.C(x, y + k, x + k, y, x + r, y); p.Z();
+}
+const fill = (rec, segs, color) => rec.ops.push({ t: "fill", segs, color });
+
+const capR = k => F[k].cap / F[k].upm;
+const glyph = (k, ch) => F[k].g[ch] || [0];
+function textW(k, s, size, track = 0) {
+  const ch = [...s]; let adv = 0;
+  for (const c of ch) adv += glyph(k, c)[0];
+  return (adv / F[k].upm + track * Math.max(0, ch.length - 1)) * size;
+}
+function text(rec, k, s, x, y, size, color, { track = 0, anchor = "start" } = {}) {
+  const w = textW(k, s, size, track);
+  if (anchor === "middle") x -= w / 2; else if (anchor === "end") x -= w;
+  const sc = size / F[k].upm, p = pathB(rec.m);
+  let cx = x;
+  for (const c of s) {
+    const g = glyph(k, c);
+    for (let i = 1; i < g.length;) {
+      const op = g[i];
+      if (op === "M") { p.M(cx + g[i + 1] * sc, y + g[i + 2] * sc); i += 3; }
+      else if (op === "L") { p.L(cx + g[i + 1] * sc, y + g[i + 2] * sc); i += 3; }
+      else if (op === "C") { p.C(cx + g[i+1]*sc, y + g[i+2]*sc, cx + g[i+3]*sc, y + g[i+4]*sc, cx + g[i+5]*sc, y + g[i+6]*sc); i += 7; }
+      else { p.Z(); i += 1; }
+    }
+    cx += g[0] * sc + track * size;
+  }
+  if (p.segs.length) fill(rec, p.segs, color);
+  return w;
+}
+
+function monogram(rec, x, y, h, flat) {
+  const p = pathB(rec.m);
+  for (const poly of A.logo.polys) {
+    p.M(x + poly[0] * h, y + poly[1] * h);
+    for (let i = 2; i < poly.length; i += 2) p.L(x + poly[i] * h, y + poly[i + 1] * h);
+    p.Z();
+  }
+  if (flat) fill(rec, p.segs, flat);
+  else rec.ops.push({ t: "grad", segs: p.segs, p0: apply(rec.m, x, y + h), p1: apply(rec.m, x, y), stops: A.logo.gradient });
+  return A.logo.aspect * h;
+}
+
+function lockup(rec, colors = {}) {
+  const w = monogram(rec, X0, ROW1_Y, ROW1_H, colors.mono);
+  const dx = X0 + w + 1.25;
+  const p = pathB(rec.m); p.M(dx, ROW1_Y + 0.9); p.L(dx, ROW1_Y + ROW1_H - 0.9);
+  rec.ops.push({ t: "stroke", segs: p.segs, color: colors.rule || T.rule, width: T.ruleW });
+  const cap = 1.32, size = cap / capR("brand");
+  const tw = text(rec, "brand", "OUTLET", dx + 1.25, ROW1_Y + (ROW1_H - cap) / 2, size, colors.word || T.soft, { track: 0.32 });
+  return dx + 1.25 + tw;
+}
+
+function sizeChip(rec, txt) {
+  if (!txt) return;
+  const s = ROW1_H, x = X1 - s, y = ROW1_Y;
+  const p = pathB(rec.m); rrectP(p, x, y, s, s, 0.9);
+  rec.ops.push({ t: "stroke", segs: p.segs, color: T.chipStroke, width: 0.22 });
+  const cr = capR("chip");
+  let cap = txt.length <= 2 ? 2.55 : 2.0, size = cap / cr;
+  const maxw = s - 1.3, w = textW("chip", txt, size, -0.02);
+  if (w > maxw) { size *= maxw / w; cap = size * cr; }
+  text(rec, "chip", txt, x + s / 2, y + (s - cap) / 2, size, T.chipText, { track: -0.02, anchor: "middle" });
+}
+
+function price(rec, v, L) {
+  if (v == null) return;
+  const [inteiro, cent] = brl(v);
+  let size = L.priceCap / capR("price");
+  const lay = sz => {
+    const cur = sz * 0.36, cen = sz * 0.5;
+    const wc = textW("rs", "R$", cur), wi = textW("price", inteiro, sz, -0.01), wn = textW("price", "," + cent, cen);
+    return { total: wc + 0.1 * sz + wi + 0.04 * sz + wn, cur, cen, wc, wi };
+  };
+  let l = lay(size);
+  if (l.total > PRICE_MAXW) { size *= PRICE_MAXW / l.total; l = lay(size); }
+  const top = L.priceBase + size * capR("price");
+  let x = X0;
+  text(rec, "rs", "R$", x, top - l.cur * capR("rs"), l.cur, T.soft);
+  x += l.wc + 0.1 * size;
+  text(rec, "price", inteiro, x, L.priceBase, size, T.ink, { track: -0.01 });
+  x += l.wi + 0.04 * size;
+  text(rec, "price", "," + cent, x, top - l.cen * capR("price"), l.cen, T.ink);
+}
+
+function barcode(rec, ean) {
+  const pp = pathB(rec.m);
+  rrectP(pp, PANEL[0], PANEL[1], PANEL[2] - PANEL[0], PANEL[3] - PANEL[1], 1.0);
+  fill(rec, pp.segs, T.panel);
+  if (!ean) return;
+  const bits = EAN.encode(ean), p = pathB(rec.m);
+  for (let i = 0; i < 95;) {
+    if (bits[i] !== "1") { i++; continue; }
+    let j = i; while (j < 95 && bits[j] === "1") j++;
+    const y0 = EAN.isGuard(i) ? GUARD_Y0 : BAR_Y0;
+    // BWR (redução de barra): cada barra 0,02 mm mais fina compensa o espalhamento da tinta
+    // e deixa as bordas longe da divisa dos pontos da impressora → largura estável.
+    rectP(p, BAR_X + i * MOD + BWR / 2, y0, (j - i) * MOD - BWR, BAR_Y1 - y0);
+    i = j;
+  }
+  fill(rec, p.segs, T.bars);
+  const size = DIGIT_CAP / capR("digits");
+  text(rec, "digits", ean[0], BAR_X - 1.0, DIGIT_BASE, size, T.bars, { anchor: "end" });
+  for (let k = 0; k < 6; k++) {
+    text(rec, "digits", ean[1 + k], BAR_X + (3 + 7 * k + 3.5) * MOD, DIGIT_BASE, size, T.bars, { anchor: "middle" });
+    text(rec, "digits", ean[7 + k], BAR_X + (50 + 7 * k + 3.5) * MOD, DIGIT_BASE, size, T.bars, { anchor: "middle" });
+  }
+}
+
+/* Nome do produto: uma linha, maiúsculas. Nome comprido diminui até um mínimo
+   legível; se ainda não couber, corta com "...". */
+const NAME_GLYPHS = new Set(Object.keys(F.name.g));
+function cleanName(s) {
+  return [...String(s || "").toLocaleUpperCase("pt-BR")]
+    .map(c => (NAME_GLYPHS.has(c) ? c : /\s/.test(c) ? " " : ""))
+    .join("").replace(/\s+/g, " ").trim();
+}
+function productName(rec, txt, L) {
+  if (!txt) return;
+  const k = "name", cr = capR(k), track = 0.05, maxw = X1 - X0;
+  let size = L.nameCap / cr, s = txt, w = textW(k, s, size, track);
+  if (w > maxw) { size = Math.max(L.nameMin / cr, (size * maxw) / w); w = textW(k, s, size, track); }
+  if (w > maxw) {
+    while (s.length > 1 && textW(k, s + "...", size, track) > maxw) s = s.slice(0, -1).trimEnd();
+    s += "...";
+  }
+  text(rec, k, s, X0, L.nameBase, size, T.name, { track });
+}
+
+function drawLabel(rec, d) {
+  const L = d.name ? LAYOUT.named : LAYOUT.plain;
+  const p = pathB(rec.m); rectP(p, 0, 0, W, H); fill(rec, p.segs, T.bg);
+  lockup(rec);
+  sizeChip(rec, d.size);
+  productName(rec, d.name, L);
+  price(rec, d.price, L);
+  barcode(rec, d.ean);
+}
+
+function drawSheet(labels) {
+  const ops = [];
+  labels.forEach((d, i) => {
+    if (!d) return;                               // posição vazia: não imprime nada
+    const [x, y, r] = SLOTS[i];
+    drawLabel({ ops, m: r ? [0, 1, -1, 0, x + H, y] : [1, 0, 0, 1, x, y] }, d);
+  });
+  const rec = { ops, m: [1, 0, 0, 1, 0, 0] };
+  ["SOBRA", "4×3 cm", "12/folha", "imprimir", "em 100%"].forEach((t, i) =>
+    text(rec, "digits", t, 90, 21 - i * 2.6, i ? 1.55 : 1.7, "#6B6D70", { track: i ? 0 : 0.06, anchor: "middle" }));
+  for (const [a, b, c, d] of CUT_LINES) {
+    const p = pathB(rec.m); p.M(a, b); p.L(c, d);
+    ops.push({ t: "stroke", segs: p.segs, color: CUT.color, width: CUT.width });
+  }
+  return ops;
+}
+
+/* ═══════════════════════════ 6. MOTOR SVG (prévia) ═══════════════════════════ */
+const num = v => { const r = Math.round(v * 1000) / 1000; return Object.is(r, -0) ? "0" : String(r); };
+const dOf = segs => segs.map(g => g[0] === "Z" ? "Z" : g[0] + g.slice(1).map(num).join(" ")).join("");
+let gradSeq = 0;
+function toSVG(ops, w, h, { paper = null, cls = "" } = {}) {
+  let defs = "", body = paper ? `<rect x="0" y="0" width="${w}" height="${h}" fill="${paper}"/>` : "";
+  let g = "";
+  for (const o of ops) {
+    const d = dOf(o.segs);
+    if (o.t === "fill") g += `<path d="${d}" fill="${o.color}"/>`;
+    else if (o.t === "stroke") g += `<path d="${d}" fill="none" stroke="${o.color}" stroke-width="${num(o.width)}"/>`;
+    else {
+      const id = "vcg" + (gradSeq++);
+      defs += `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${num(o.p0[0])}" y1="${num(o.p0[1])}" x2="${num(o.p1[0])}" y2="${num(o.p1[1])}">` +
+              o.stops.map(([t, c]) => `<stop offset="${t}" stop-color="${c}"/>`).join("") + `</linearGradient>`;
+      g += `<path d="${d}" fill="url(#${id})"/>`;
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls}" viewBox="0 0 ${num(w)} ${num(h)}" role="img"><defs>${defs}</defs>${body}<g transform="matrix(1 0 0 -1 0 ${num(h)})">${g}</g></svg>`;
+}
+
+/* ═══════════════════════════ 7. MOTOR PDF (download, vetor puro, sem biblioteca) ═══════════════════════════ */
+const PT = 72 / 25.4;
+const rgb = hex => { const v = parseInt(hex.slice(1), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255].map(c => (c / 255).toFixed(4).replace(/0+$/, "").replace(/\.$/, "")).join(" "); };
+const pdfPath = segs => segs.map(g => {
+  if (g[0] === "M") return `${num(g[1])} ${num(g[2])} m`;
+  if (g[0] === "L") return `${num(g[1])} ${num(g[2])} l`;
+  if (g[0] === "C") return `${g.slice(1).map(num).join(" ")} c`;
+  return "h";
+}).join("\n");
+
+async function deflate(str) {
+  try {
+    if (typeof CompressionStream === "undefined") return null;
+    const s = new Blob([str]).stream().pipeThrough(new CompressionStream("deflate"));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  } catch (e) { return null; }
+}
+
+async function toPDF(pages, title) {
+  const enc = new TextEncoder();
+  const objs = {}; let next = 1;
+  const id = () => next++;
+  const catalog = id(), pagesId = id(), info = id(), fn = id();
+
+  const stops = A.logo.gradient;
+  const sub = [];
+  for (let i = 0; i < stops.length - 1; i++) sub.push(`<< /FunctionType 2 /Domain [0 1] /C0 [${rgb(stops[i][1])}] /C1 [${rgb(stops[i + 1][1])}] /N 1 >>`);
+  objs[fn] = `<< /FunctionType 3 /Domain [0 1] /Functions [${sub.join(" ")}] /Bounds [${stops.slice(1, -1).map(s => s[0]).join(" ")}] /Encode [${sub.map(() => "0 1").join(" ")}] >>`;
+
+  const kids = [];
+  for (const ops of pages) {
+    const pageId = id(), contentId = id();
+    const sh = [];
+    let cs = `${PT.toFixed(6)} 0 0 ${PT.toFixed(6)} 0 0 cm\n0 J 0 j\n`;
+    for (const o of ops) {
+      if (o.t === "fill") cs += `${rgb(o.color)} rg\n${pdfPath(o.segs)}\nf\n`;
+      else if (o.t === "stroke") cs += `${rgb(o.color)} RG ${num(o.width)} w\n${pdfPath(o.segs)}\nS\n`;
+      else {
+        const sid = id();
+        objs[sid] = `<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [${[...o.p0, ...o.p1].map(num).join(" ")}] /Function ${fn} 0 R /Extend [true true] >>`;
+        cs += `q\n${pdfPath(o.segs)}\nW n\n/Sh${sh.length} sh\nQ\n`;
+        sh.push(sid);
+      }
+    }
+    const z = await deflate(cs);
+    objs[contentId] = z ? { dict: `<< /Length ${z.length} /Filter /FlateDecode >>`, data: z }
+                        : { dict: `<< /Length ${enc.encode(cs).length} >>`, data: enc.encode(cs) };
+    const shRes = sh.map((s, i) => `/Sh${i} ${s} 0 R`).join(" ");
+    objs[pageId] = `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${(PAGE_W * PT).toFixed(4)} ${(PAGE_H * PT).toFixed(4)}] ` +
+                   `/Resources << /Shading << ${shRes} >> >> /Contents ${contentId} 0 R >>`;
+    kids.push(pageId);
+  }
+  objs[pagesId] = `<< /Type /Pages /Kids [${kids.map(k => `${k} 0 R`).join(" ")}] /Count ${kids.length} >>`;
+  objs[catalog] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+  const dt = new Date(), p2 = n => String(n).padStart(2, "0");
+  const stamp = `${dt.getFullYear()}${p2(dt.getMonth() + 1)}${p2(dt.getDate())}${p2(dt.getHours())}${p2(dt.getMinutes())}${p2(dt.getSeconds())}`;
+  objs[info] = `<< /Title (${title.replace(/[()\\]/g, "")}) /Producer (KeyCodes) /CreationDate (D:${stamp}) >>`;
+
+  const parts = []; let len = 0; const offs = [];
+  const push = x => { const b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  push("%PDF-1.4\n"); push(new Uint8Array([0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));
+  for (let i = 1; i < next; i++) {
+    offs[i] = len;
+    const o = objs[i];
+    if (typeof o === "string") push(`${i} 0 obj\n${o}\nendobj\n`);
+    else { push(`${i} 0 obj\n${o.dict}\nstream\n`); push(o.data); push("\nendstream\nendobj\n"); }
+  }
+  const xref = len;
+  let x = `xref\n0 ${next}\n0000000000 65535 f \n`;
+  for (let i = 1; i < next; i++) x += `${String(offs[i]).padStart(10, "0")} 00000 n \n`;
+  push(x + `trailer\n<< /Size ${next} /Root ${catalog} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  const out = new Uint8Array(len); let o = 0;
+  for (const b of parts) { out.set(b, o); o += b.length; }
+  return out;
+}
+
+/* ═══════════════════════════ 8. ESTADO ═══════════════════════════
+   products → cada peça (código, preço, tamanho).
+   slots    → cada posição das folhas, na ordem A1…A5, B1…B3, C1…C3, D1, com o id do produto
+              que vai ali (null = vazia). A quantidade de um produto é quantas posições ele
+              ocupa. Por isso dá pra trocar só 3 etiquetas da folha sem mexer nas outras. */
+const KEY = "vc-etiquetas-v2", KEY_V1 = "vc-etiquetas-v1";
+let seq = 1;
+const newProduct = (o = {}) => ({ id: seq++, code: "", name: "", price: "", size: "", generated: false, ...o });
+const state = { products: [], slots: [], active: 0, page: 0, sel: new Set() };
+const byId = id => state.products.find(p => p.id === id);
+const qtyOf = id => state.slots.reduce((n, v) => n + (v === id ? 1 : 0), 0);
+const sheetCount = () => Math.max(1, Math.ceil(state.slots.length / PER_SHEET));
+const cleanSize = v => String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+function uniqueCode() {
+  let c; do { c = EAN.random(); } while (state.products.some(p => EAN.resolve(p.code).ean === c));
+  return c;
+}
+
+/* Completa a última folha com posições vazias e tira folhas que ficaram sem etiqueta. */
+function normalize() {
+  const sheets = [];
+  for (let i = 0; i < state.slots.length; i += PER_SHEET) {
+    const sh = state.slots.slice(i, i + PER_SHEET).map(v => (v != null && byId(v) ? v : null));
+    while (sh.length < PER_SHEET) sh.push(null);
+    if (sh.some(v => v != null)) sheets.push(sh);
+  }
+  if (sheets.length !== Math.ceil(state.slots.length / PER_SHEET)) state.sel.clear();
+  state.slots = sheets.length ? sheets.flat() : new Array(PER_SHEET).fill(null);
+  state.page = Math.max(0, Math.min(state.page, sheetCount() - 1));
+  state.active = Math.max(0, Math.min(state.active, state.products.length - 1));
+}
+
+/* Quantidade: aumentar ocupa primeiro as posições vazias, depois abre folha nova;
+   diminuir tira as últimas etiquetas desse produto. */
+function setQty(id, q) {
+  q = Math.max(0, Math.min(999, q | 0));
+  let cur = qtyOf(id);
+  if (q > cur) {
+    for (let i = 0; i < state.slots.length && cur < q; i++) if (state.slots[i] == null) { state.slots[i] = id; cur++; }
+    while (cur < q) {
+      const add = new Array(PER_SHEET).fill(null);
+      for (let i = 0; i < PER_SHEET && cur < q; i++) { add[i] = id; cur++; }
+      state.slots.push(...add);
+    }
+  } else {
+    for (let i = state.slots.length - 1; i >= 0 && cur > q; i--) if (state.slots[i] === id) { state.slots[i] = null; cur--; }
+  }
+  normalize();
+}
+
+function load() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (s && Array.isArray(s.products) && s.products.length && Array.isArray(s.slots)) {
+    const map = new Map();
+    for (const p of s.products) {
+      const np = newProduct({ code: String(p.code || ""), name: String(p.name || "").slice(0, 50), price: String(p.price || ""), size: cleanSize(p.size), generated: !!p.generated });
+      map.set(p.id, np.id); state.products.push(np);
+    }
+    state.slots = s.slots.map(v => (map.has(v) ? map.get(v) : null));
+    normalize(); return;
+  }
+  let v1 = null;
+  try { v1 = JSON.parse(localStorage.getItem(KEY_V1) || "null"); } catch (e) {}
+  const items = v1 && Array.isArray(v1.items) && v1.items.length ? v1.items
+    : [{ code: "2787789328799", price: "119,99", size: "G", qty: 12 }];   // exemplo: a etiqueta aprovada
+  for (const it of items) {
+    const p = newProduct({ code: String(it.code || ""), price: String(it.price || ""), size: cleanSize(it.size), generated: !!it.generated });
+    state.products.push(p);
+    const q = Math.min(999, Math.max(1, +it.qty || 1));
+    for (let i = 0; i < q; i++) state.slots.push(p.id);
+  }
+  normalize();
+}
+let saveT = 0;
+function saveNow() {
+  clearTimeout(saveT); saveT = 0;
+  try {
+    localStorage.setItem(KEY, JSON.stringify({
+      products: state.products.map(({ id, code, name, price, size, generated }) => ({ id, code, name, price, size, generated })),
+      slots: state.slots,
+    }));
+  } catch (e) { /* sem armazenamento: segue sem lembrar */ }
+}
+function persist() { clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+// fechou a aba ou trocou de janela logo depois de mexer: salva na hora
+addEventListener("pagehide", () => saveT && saveNow());
+document.addEventListener("visibilitychange", () => document.hidden && saveT && saveNow());
+
+const derive = p => ({ ...EAN.resolve(p.code), price: parsePrice(p.price), size: p.size, name: cleanName(p.name) });
+function labelOf(id) {
+  const p = id == null ? null : byId(id);
+  if (!p) return null;
+  const d = derive(p);
+  return { price: d.price, size: d.size, ean: d.ean, name: d.name };
+}
+const sheetLabels = k => state.slots.slice(k * PER_SHEET, (k + 1) * PER_SHEET).map(labelOf);
+const used = () => state.slots.filter(v => v != null).length;
+
+function problems() {
+  const list = [];
+  state.products.forEach((p, i) => {
+    if (!qtyOf(p.id)) return;
+    const d = derive(p), n = state.products.length > 1 ? ` do produto ${i + 1}` : "";
+    if (!d.ean) list.push(d.kind === "err" ? `Corrija o código${n}.` : `Falta o código${n}.`);
+    if (d.price == null) list.push(String(p.price).trim() ? `Confira o preço${n}.` : `Falta o preço${n}.`);
+  });
+  return list;
+}
+
+/* ═══════════════════════════ 9. INTERFACE ═══════════════════════════ */
+const $ = s => document.querySelector(s);
+const SIZES = ["PP", "P", "M", "G", "GG", "XG", "XGG", "U"];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
+
+function itemHTML(p, i) {
+  const k = p.id;
+  return `<article class="item" data-id="${k}">
+    <div class="item-head"><span class="item-n" data-title>Produto ${i + 1}</span><span class="item-sum" data-sum></span>
+      ${state.products.length > 1 ? `<button class="btn-link remove" type="button" data-act="remove">Remover</button>` : ""}</div>
+    <div class="field">
+      <label for="code-${k}">Código de barras</label>
+      <div class="code-row">
+        <input class="inp" id="code-${k}" data-f="code" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="20" placeholder="Digite ou passe o leitor" value="${esc(p.code)}">
+        <button class="btn" type="button" data-act="gen">Gerar novo</button>
+      </div>
+      <p class="status" data-status aria-live="polite"></p>
+    </div>
+    <div class="field">
+      <label for="name-${k}">Nome do produto <span class="opt">(opcional)</span></label>
+      <input class="inp" id="name-${k}" data-f="name" maxlength="50" autocomplete="off" placeholder="Ex.: Camiseta oversized" value="${esc(p.name)}">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="price-${k}">Preço</label>
+        <div class="money"><span>R$</span><input class="inp" id="price-${k}" data-f="price" inputmode="decimal" autocomplete="off" placeholder="119,99" value="${esc(p.price)}"></div>
+        <p class="ferr" data-perr></p>
+      </div>
+      <div class="field">
+        <label for="qty-${k}">Quantidade</label>
+        <div class="stepper"><button type="button" data-act="dec" aria-label="Menos uma">−</button>
+          <input id="qty-${k}" data-f="qty" inputmode="numeric" autocomplete="off" value="${qtyOf(k)}">
+          <button type="button" data-act="inc" aria-label="Mais uma">+</button></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl" id="sz-${k}">Tamanho</span>
+      <div class="sizes" role="group" aria-labelledby="sz-${k}">
+        ${SIZES.map(s => `<button class="chip" type="button" data-act="size" data-s="${s}" aria-pressed="${p.size === s}">${s}</button>`).join("")}
+        <input class="inp" id="size-${k}" data-f="size" maxlength="4" autocomplete="off" placeholder="Outro" aria-label="Outro tamanho, ex.: 38" value="${SIZES.includes(p.size) ? "" : esc(p.size)}">
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderItems() {
+  $("#items").innerHTML = state.products.map(itemHTML).join("");
+  state.products.forEach(refreshItem);
+  markActive();
+}
+const elOf = p => document.querySelector(`.item[data-id="${p.id}"]`);
+const prodOf = el => byId(+el.closest(".item").dataset.id);
+
+function refreshItem(p) {
+  const el = elOf(p); if (!el) return;
+  const d = derive(p), q = qtyOf(p.id);
+  const st = el.querySelector("[data-status]");
+  let dup = "";
+  if (d.ean) {
+    const j = state.products.findIndex(o => o !== p && EAN.resolve(o.code).ean === d.ean &&
+      (parsePrice(o.price) !== d.price || o.size !== p.size));
+    if (j >= 0) dup = `Mesmo código do produto ${j + 1}, mas com preço ou tamanho diferente.`;
+  }
+  st.dataset.kind = dup ? "warn" : d.kind;
+  let msg = p.generated && d.ean ? "Código novo gerado pra loja." : esc(d.msg);
+  if (d.code && !p.generated) msg += ` <span class="mono">${d.code}</span>`;
+  if (dup) msg = esc(dup);
+  if (d.fix) msg += ` <button class="btn-link" type="button" data-act="fix" data-fix="${d.fix}">Usar ${EAN.fmt(d.fix)}</button>`;
+  // histórico: avisa quando os dados vieram de uma etiqueta salva, ou oferece usar o salvo
+  const rc = d.ean && !dup ? findRecent(d.ean) : null;
+  if (rc && p.auto) {
+    st.dataset.kind = "ok";
+    msg = `Preenchido com a última etiqueta deste código (${fmtDay(rc.last)}).`;
+  } else if (rc && (cleanName(p.name) !== cleanName(rc.name) || d.price !== parsePrice(rc.price) || p.size !== rc.size)) {
+    msg += ` <button class="btn-link" type="button" data-act="usesaved">Usar o salvo: ${[cleanName(rc.name), "R$ " + rc.price, rc.size].filter(Boolean).map(esc).join(" · ")}</button>`;
+  }
+  // só reescreve se mudou: senão um clique num botão do aviso se perde quando o campo perde o foco
+  if (st._msg !== msg) { st.innerHTML = msg; st._msg = msg; }
+  el.querySelector("[data-perr]").textContent = String(p.price).trim() && d.price == null ? "Preço inválido. Use o formato 119,99." : "";
+  el.querySelector("[data-sum]").textContent = q ? plural(q, "etiqueta", "etiquetas") : "fora da folha";
+  const pi = state.products.indexOf(p);
+  el.querySelector("[data-title]").textContent = d.name ? `${pi + 1}. ${d.name}` : `Produto ${pi + 1}`;
+  const qi = el.querySelector('[data-f="qty"]');
+  if (document.activeElement !== qi) qi.value = q;
+  el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.s === p.size)));
+}
+const refreshAll = () => state.products.forEach(refreshItem);
+
+function markActive() {
+  document.querySelectorAll(".item").forEach((el, i) => (el.dataset.active = String(i === state.active)));
+}
+function setActive(id) {
+  const i = state.products.findIndex(p => p.id === id);
+  if (i >= 0 && i !== state.active) { state.active = i; markActive(); }
+}
+
+let raf = 0;
+function renderPreview() {
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    // etiqueta ampliada do produto ativo
+    const p = state.products[state.active] || state.products[0];
+    const ops = [];
+    if (p) { const d = derive(p); drawLabel({ ops, m: [1, 0, 0, 1, 0, 0] }, { price: d.price, size: d.size, ean: d.ean, name: d.name }); }
+    $("#labelPreview").innerHTML = toSVG(ops, W, H);
+    const nm = p ? cleanName(p.name) : "";
+    $("#labelWho").textContent = nm || (state.products.length > 1 ? `Produto ${state.active + 1}` : "Prévia");
+
+    // folha atual + posições clicáveis
+    const sheets = sheetCount();
+    state.page = Math.min(state.page, sheets - 1);
+    $("#sheetPreview").innerHTML = toSVG(drawSheet(sheetLabels(state.page)), PAGE_W, PAGE_H, { paper: "#FFFFFF" });
+    const base = state.page * PER_SHEET;
+    $("#slots").innerHTML = SLOTS.map(([x, y, r], i) => {
+      const w = r ? H : W, h = r ? W : H, gi = base + i, id = state.slots[gi];
+      const pi = state.products.findIndex(q => q.id === id);
+      const who = pi >= 0 ? `produto ${pi + 1}` : "vazia";
+      return `<button type="button" class="slot${pi < 0 ? " empty" : ""}" data-slot="${gi}" aria-pressed="${state.sel.has(gi)}"
+        style="left:${x}%;top:${((PAGE_H - (y + h)) / PAGE_H) * 100}%;width:${w}%;height:${(h / PAGE_H) * 100}%"
+        aria-label="Etiqueta ${i + 1}, ${who}"><span class="slot-n">${i + 1}</span></button>`;
+    }).join("");
+    $("#pager").hidden = sheets < 2;
+    $("#pageInfo").textContent = `Folha ${state.page + 1} de ${sheets}`;
+    $("#prev").disabled = state.page === 0;
+    $("#next").disabled = state.page >= sheets - 1;
+    renderSel();
+
+    // totais e estado dos botões
+    const n = used(), free = state.slots.length - n;
+    $("#total").innerHTML = `${plural(n, "etiqueta", "etiquetas")}<small>${plural(sheets, "folha", "folhas")}` +
+      (free ? ` · ${plural(free, "posição vazia", "posições vazias")}` : "") + `</small>`;
+    const probs = problems();
+    $("#download").disabled = probs.length > 0 || n === 0;
+    $("#print").disabled = $("#download").disabled;
+    const msg = $("#dlMsg");
+    if (probs.length) { msg.dataset.kind = "err"; msg.textContent = probs[0]; }
+    else if (msg.dataset.kind === "err") { msg.dataset.kind = ""; msg.textContent = ""; }
+  });
+}
+
+function renderSel() {
+  const n = state.sel.size;
+  $("#selPanel").hidden = !n;
+  $("#selHint").hidden = !!n;
+  if (!n) return;
+  $("#selCount").textContent = `${plural(n, "etiqueta selecionada", "etiquetas selecionadas")}`;
+  $("#selOpts").innerHTML =
+    `<button class="btn btn-sm sel-new" type="button" data-assign="new">+ Produto novo</button>` +
+    state.products.map((p, i) => {
+      const d = derive(p);
+      return `<button class="btn btn-sm" type="button" data-assign="${p.id}">${d.name ? `${i + 1}. ${esc(d.name)}` : `Produto ${i + 1}`}` +
+        (d.price != null ? ` · R$ ${fmtPrice(d.price)}` : "") + (p.size ? ` · ${esc(p.size)}` : "") + `</button>`;
+    }).join("") +
+    `<button class="btn btn-sm" type="button" data-assign="none">Deixar ${n > 1 ? "vazias" : "vazia"}</button>`;
+}
+
+/* Troca as etiquetas selecionadas: por um produto novo, por um da lista, ou deixa vazias. */
+function assignSel(target) {
+  const idx = [...state.sel].sort((a, b) => a - b);
+  if (!idx.length) return;
+  let focusNew = null, id = null;
+  if (target === "new") {
+    const base = byId(state.slots[idx[0]]) || state.products[state.active];
+    const p = newProduct({ code: uniqueCode(), name: base ? base.name : "", price: base ? base.price : "", size: base ? base.size : "", generated: true });
+    state.products.push(p); id = p.id; focusNew = p;
+  } else if (target !== "none") id = +target;
+  idx.forEach(i => (state.slots[i] = id));
+  state.sel.clear();
+  normalize();
+  if (focusNew) state.active = state.products.length - 1;
+  else if (id != null) setActive(id);
+  renderItems(); renderPreview(); persist();
+  if (focusNew) {
+    const inp = elOf(focusNew).querySelector('[data-f="code"]');
+    inp.scrollIntoView({ block: "center", behavior: "smooth" });
+    inp.focus({ preventScroll: true }); inp.select();
+  }
+}
+
+function update(p) {
+  refreshItem(p);
+  state.products.forEach(o => o !== p && refreshItem(o));   // aviso de código repetido pode mudar
+  renderPreview();
+  persist();
+}
+
+/* eventos — delegados */
+$("#items").addEventListener("input", e => {
+  const f = e.target.dataset.f; if (!f) return;
+  const p = prodOf(e.target);
+  if (f === "code") { p.code = e.target.value; p.generated = false; autofill(p); }
+  if (f === "price" || f === "name") {
+    p[f] = e.target.value;
+    if (p.auto) { delete p.auto[f]; if (!Object.keys(p.auto).length) p.auto = null; }   // mexeu: vira dado seu
+  }
+  if (f === "qty") {
+    const raw = e.target.value.replace(/\D/g, "");
+    if (raw === "") return;                     // espera terminar de digitar
+    setQty(p.id, parseInt(raw, 10)); refreshAll();
+  }
+  if (f === "size") {
+    const v = cleanSize(e.target.value);
+    if (e.target.value !== v) e.target.value = v;
+    p.size = v;
+    if (p.auto) { delete p.auto.size; if (!Object.keys(p.auto).length) p.auto = null; }
+  }
+  setActive(p.id);
+  update(p);
+});
+$("#items").addEventListener("change", e => {
+  const f = e.target.dataset.f; if (!f) return;
+  const p = prodOf(e.target);
+  if (f === "price") { const v = parsePrice(p.price); if (v != null) { p.price = fmtPrice(v); e.target.value = p.price; } update(p); }
+  if (f === "qty") e.target.value = qtyOf(p.id);
+});
+$("#items").addEventListener("focusin", e => {
+  if (!e.target.closest(".item")) return;
+  const p = prodOf(e.target), i = state.products.indexOf(p);
+  if (i !== state.active) { state.active = i; markActive(); renderPreview(); }
+});
+// Leitor de código manda "Enter" no fim: pula pro nome; Enter no nome pula pro preço.
+$("#items").addEventListener("keydown", e => {
+  const f = e.target.dataset.f;
+  if (e.key !== "Enter" || (f !== "code" && f !== "name")) return;
+  e.preventDefault();
+  const nx = elOf(prodOf(e.target)).querySelector(f === "code" ? '[data-f="name"]' : '[data-f="price"]');
+  nx.focus(); nx.select();
+});
+$("#items").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const p = prodOf(b), el = elOf(p), act = b.dataset.act;
+  setActive(p.id);
+  if (act === "gen") {
+    p.code = uniqueCode(); p.generated = true; el.querySelector('[data-f="code"]').value = p.code;
+  } else if (act === "fix") {
+    p.code = b.dataset.fix; p.generated = false; el.querySelector('[data-f="code"]').value = p.code;
+    autofill(p);
+  } else if (act === "inc" || act === "dec") {
+    setQty(p.id, qtyOf(p.id) + (act === "inc" ? 1 : -1)); refreshAll();
+  } else if (act === "size") {
+    p.size = p.size === b.dataset.s ? "" : b.dataset.s;
+    el.querySelector('[data-f="size"]').value = "";
+    if (p.auto) { delete p.auto.size; if (!Object.keys(p.auto).length) p.auto = null; }
+  } else if (act === "usesaved") {
+    const rc = findRecent(EAN.resolve(p.code).ean);
+    if (rc) { p.name = rc.name; p.price = rc.price; p.size = rc.size; p.auto = null; syncFields(p); }
+  } else if (act === "remove") {
+    const snap = { products: state.products.slice(), slots: state.slots.slice(), active: state.active };
+    const at = state.products.indexOf(p);
+    state.products.splice(at, 1);
+    state.slots = state.slots.map(v => (v === p.id ? null : v));
+    state.sel.clear(); normalize();
+    renderItems(); renderPreview(); persist();
+    showUndo(snap, "Produto removido.");
+    return;
+  }
+  update(p);
+});
+
+let undoT = 0;
+const snapshot = () => ({ products: state.products.slice(), slots: state.slots.slice(), active: state.active });
+function showUndo(snap, text) {
+  const u = $("#undo");
+  u.innerHTML = `${esc(text)} <button class="btn-link" type="button" id="undoBtn">Desfazer</button>`;
+  u.hidden = false;
+  $("#undoBtn").onclick = () => {
+    state.products = snap.products; state.slots = snap.slots; state.active = snap.active;
+    u.hidden = true; normalize(); renderItems(); renderPreview(); persist();
+  };
+  clearTimeout(undoT); undoT = setTimeout(() => (u.hidden = true), 8000);
+}
+
+$("#add").addEventListener("click", () => {
+  const p = newProduct({ code: uniqueCode(), generated: true });
+  state.products.push(p);
+  const free = state.slots.filter(v => v == null).length;
+  setQty(p.id, free || PER_SHEET);
+  state.active = state.products.length - 1;
+  renderItems(); renderPreview(); persist();
+  const inp = elOf(p).querySelector('[data-f="code"]'); inp.focus(); inp.select();
+});
+
+// folha: tocar nas etiquetas seleciona
+$("#slots").addEventListener("click", e => {
+  const b = e.target.closest(".slot"); if (!b) return;
+  const gi = +b.dataset.slot;
+  if (state.sel.has(gi)) state.sel.delete(gi); else state.sel.add(gi);
+  if (state.slots[gi] != null) setActive(state.slots[gi]);
+  renderPreview();
+});
+$("#selAll").addEventListener("click", () => {
+  for (let i = 0; i < PER_SHEET; i++) state.sel.add(state.page * PER_SHEET + i);
+  renderPreview();
+});
+$("#selClear").addEventListener("click", () => { state.sel.clear(); renderPreview(); });
+$("#selOpts").addEventListener("click", e => {
+  const b = e.target.closest("[data-assign]"); if (b) assignSel(b.dataset.assign);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && state.sel.size) { state.sel.clear(); renderPreview(); }
+});
+$("#prev").addEventListener("click", () => { state.page--; renderPreview(); });
+$("#next").addEventListener("click", () => { state.page++; renderPreview(); });
+
+/* ═══════════════════════════ 9b. RECENTES ═══════════════════════════
+   Fica salvo NESTE navegador (localStorage). Grava quando você imprime ou baixa:
+   - produtos: um por código, com o último nome/preço/tamanho usado (até 300)
+   - folhas: as últimas 10, posição por posição, pra repetir igual */
+const HKEY = "vc-etiquetas-recentes-v1";
+let hist = { catalog: [], jobs: [] };
+try {
+  const h = JSON.parse(localStorage.getItem(HKEY) || "null");
+  if (h && Array.isArray(h.catalog) && Array.isArray(h.jobs)) hist = h;
+} catch (e) { /* sem armazenamento: recentes ficam só nesta sessão */ }
+const saveHist = () => { try { localStorage.setItem(HKEY, JSON.stringify(hist)); } catch (e) {} };
+const findRecent = ean => (ean ? hist.catalog.find(c => c.ean === ean) : null);
+const p2 = n => String(n).padStart(2, "0");
+const fmtDay = ts => { const d = new Date(ts); return `${p2(d.getDate())}/${p2(d.getMonth() + 1)}`; };
+const fmtWhen = ts => { const d = new Date(ts); return `${fmtDay(ts)} às ${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+const fold = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+function record() {
+  const ts = Date.now();
+  const inUse = state.products.filter(p => qtyOf(p.id) > 0 && derive(p).ean && derive(p).price != null);
+  if (!inUse.length) return;
+  for (const p of inUse) {
+    const d = derive(p), i = hist.catalog.findIndex(c => c.ean === d.ean);
+    const uses = (i >= 0 ? hist.catalog[i].uses || 0 : 0) + qtyOf(p.id);
+    if (i >= 0) hist.catalog.splice(i, 1);
+    hist.catalog.unshift({ ean: d.ean, name: String(p.name).trim(), price: fmtPrice(d.price), size: p.size, last: ts, uses });
+  }
+  hist.catalog = hist.catalog.slice(0, 300);
+  const ids = inUse.map(p => p.id);
+  const job = {
+    ts, n: state.slots.filter(v => ids.includes(v)).length,
+    products: inUse.map(p => ({ code: derive(p).ean, name: String(p.name).trim(), price: fmtPrice(derive(p).price), size: p.size })),
+    slots: state.slots.map(v => (ids.includes(v) ? ids.indexOf(v) : null)),
+  };
+  const same = hist.jobs[0] && JSON.stringify([hist.jobs[0].products, hist.jobs[0].slots]) === JSON.stringify([job.products, job.slots]);
+  if (same) hist.jobs[0].ts = ts; else hist.jobs.unshift(job);
+  hist.jobs = hist.jobs.slice(0, 10);
+  saveHist();
+  renderRecent();
+  refreshAll();
+}
+
+/* Código digitado/escaneado que já existe no histórico: preenche só os campos vazios.
+   Se o código mudar de novo (ex.: ainda digitando), desfaz o que foi preenchido sozinho. */
+function autofill(p) {
+  if (p.auto) {
+    for (const k of Object.keys(p.auto)) if (p[k] === p.auto[k]) p[k] = "";
+    p.auto = null;
+  }
+  const rc = findRecent(EAN.resolve(p.code).ean);
+  if (rc) {
+    const a = {};
+    for (const k of ["name", "price", "size"]) if (!String(p[k]).trim() && rc[k]) { p[k] = rc[k]; a[k] = rc[k]; }
+    if (Object.keys(a).length) p.auto = a;
+  }
+  syncFields(p);
+}
+function syncFields(p) {
+  const el = elOf(p); if (!el) return;
+  el.querySelector('[data-f="name"]').value = p.name;
+  el.querySelector('[data-f="price"]').value = p.price;
+  el.querySelector('[data-f="size"]').value = SIZES.includes(p.size) ? "" : p.size;
+}
+
+const isBlank = p => !String(p.price).trim() && !String(p.name).trim() && (p.generated || !String(p.code).trim());
+function useRecent(ean) {
+  const rc = findRecent(ean); if (!rc) return;
+  let p = state.products.find(o => EAN.resolve(o.code).ean === ean);
+  if (!p) {
+    p = state.products.find(o => isBlank(o) && qtyOf(o.id) > 0);   // aproveita um produto ainda vazio
+    if (p) Object.assign(p, { code: rc.ean, name: rc.name, price: rc.price, size: rc.size, generated: false, auto: null });
+    else {
+      p = newProduct({ code: rc.ean, name: rc.name, price: rc.price, size: rc.size });
+      state.products.push(p);
+      setQty(p.id, state.slots.filter(v => v == null).length || PER_SHEET);
+    }
+    renderItems();
+  }
+  state.active = state.products.indexOf(p); markActive();
+  renderPreview(); persist();
+  elOf(p).scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function useJob(i) {
+  const j = hist.jobs[i]; if (!j) return;
+  const snap = snapshot();
+  state.products = j.products.map(x => newProduct({ code: x.code, name: x.name || "", price: x.price, size: cleanSize(x.size) }));
+  state.slots = j.slots.map(k => (k == null ? null : state.products[k].id));
+  state.sel.clear(); state.active = 0; state.page = 0; normalize();
+  renderItems(); renderPreview(); persist();
+  showUndo(snap, `Folha de ${fmtWhen(j.ts)} carregada.`);
+}
+
+function renderRecent() {
+  const n = hist.catalog.length;
+  $("#recCount").textContent = n ? `· ${plural(n, "produto", "produtos")}` : "";
+  $("#recEmpty").hidden = n > 0;
+  $("#jobsWrap").hidden = !hist.jobs.length;
+  $("#recsWrap").hidden = !n;
+  $("#jobs").innerHTML = hist.jobs.slice(0, 5).map((j, i) => {
+    const names = j.products.map(x => cleanName(x.name) || `R$ ${x.price}`);
+    const what = names[0] + (names.length > 1 ? ` + ${plural(names.length - 1, "outro", "outros")}` : "");
+    return `<li><button class="job" type="button" data-job="${i}"><b>${i === 0 ? "Repetir a última folha" : esc(what)}</b>` +
+      `<span>${fmtWhen(j.ts)} · ${plural(j.n, "etiqueta", "etiquetas")}${i === 0 ? " · " + esc(what) : ""}</span></button></li>`;
+  }).join("");
+  const q = fold($("#recSearch").value.trim()), qd = q.replace(/\D/g, "");
+  const list = hist.catalog.filter(c => !q || fold(c.name).includes(q) || (qd && c.ean.includes(qd)));
+  $("#recs").innerHTML = list.length ? list.slice(0, 60).map(c =>
+    `<li class="rec"><button class="rec-main" type="button" data-rec="${c.ean}">` +
+      `<span class="rec-name">${esc(cleanName(c.name) || "Sem nome")}</span>` +
+      `<span class="rec-meta">R$ ${esc(c.price)}${c.size ? " · " + esc(c.size) : ""} · ${EAN.fmt(c.ean)} · ${fmtDay(c.last)}</span></button>` +
+      `<button class="rec-x" type="button" data-recdel="${c.ean}" aria-label="Tirar dos recentes">×</button></li>`).join("")
+    : `<li class="rec-none">Nada encontrado.</li>`;
+}
+$("#recs").addEventListener("click", e => {
+  const del = e.target.closest("[data-recdel]");
+  if (del) { hist.catalog = hist.catalog.filter(c => c.ean !== del.dataset.recdel); saveHist(); renderRecent(); refreshAll(); return; }
+  const b = e.target.closest("[data-rec]"); if (b) useRecent(b.dataset.rec);
+});
+$("#jobs").addEventListener("click", e => { const b = e.target.closest("[data-job]"); if (b) useJob(+b.dataset.job); });
+$("#recSearch").addEventListener("input", renderRecent);
+$("#clear").addEventListener("click", () => {
+  const snap = snapshot();
+  const p = newProduct({ code: "", generated: false });
+  state.products = [p]; state.slots = []; setQty(p.id, PER_SHEET);
+  state.active = 0; state.page = 0; state.sel.clear();
+  renderItems(); renderPreview(); persist();
+  showUndo(snap, "Folha nova começada.");
+  elOf(p).querySelector('[data-f="code"]').focus();
+});
+
+/* ═══════════════════════════ 10. DOWNLOAD ═══════════════════════════ */
+function allSheets() {
+  const pages = [];
+  for (let k = 0; k < sheetCount(); k++) {
+    const labels = sheetLabels(k);
+    if (labels.some(Boolean)) pages.push(drawSheet(labels));
+  }
+  return pages;
+}
+async function buildPDF() {
+  return toPDF(allSheets(), "VC Outlet - etiquetas 4x3 cm - folha 10x15");
+}
+function fileName() {
+  const inUse = state.products.filter(p => qtyOf(p.id));
+  const n = used();
+  if (inUse.length === 1) {
+    const p = inUse[0], v = parsePrice(p.price);
+    return `VC-Outlet_${fmtPrice(v).replace(/\./g, "").replace(",", "-")}${p.size ? "_" + p.size : ""}_${n}un.pdf`;
+  }
+  const d = new Date();
+  return `VC-Outlet_etiquetas_${n}un_${d.getDate()}-${d.getMonth() + 1}.pdf`;
+}
+$("#download").addEventListener("click", async () => {
+  const btn = $("#download"), msg = $("#dlMsg");
+  btn.disabled = true; msg.dataset.kind = ""; msg.textContent = "Montando o PDF…";
+  try {
+    const bytes = await buildPDF();
+    const blob = new Blob([bytes], { type: "application/pdf" });
+    const name = fileName();
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (dl) {
+      try {
+        await dl.save({ filename: name, data: blob });
+        msg.dataset.kind = "ok"; msg.textContent = `PDF salvo: ${name}`;
+        record();
+      } catch (err) {
+        const code = err && err.code;
+        msg.dataset.kind = code === "declined" ? "" : "err";
+        msg.textContent = code === "declined" ? "Download cancelado."
+          : code === "rate_limited" ? "Já tem um download esperando confirmação. Responda ele e tente de novo."
+          : "Não deu pra baixar aqui. Abra o gerador direto no claude.ai.";
+      }
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      msg.dataset.kind = "ok"; msg.textContent = `PDF pronto: ${name}`;
+      record();
+    }
+  } catch (err) {
+    msg.dataset.kind = "err"; msg.textContent = "Algo deu errado ao montar o PDF. Recarregue a página e tente de novo.";
+  } finally {
+    btn.disabled = problems().length > 0 || used() === 0;
+  }
+});
+
+/* ═══════════════════════════ 10b. IMPRESSÃO DIRETA ═══════════════════════════
+   Só na versão do computador (arquivo aberto no navegador). Dentro do claude.ai a
+   página roda num quadro que bloqueia a janela de impressão. window.claude só existe lá. */
+const CAN_PRINT = !window.claude;
+function printSheets() {
+  $("#printArea").innerHTML = allSheets().map(ops => `<div class="pp">${toSVG(ops, PAGE_W, PAGE_H)}</div>`).join("");
+  record();
+  window.print();
+}
+if (CAN_PRINT) {
+  $("#print").hidden = false;
+  $("#printTip").hidden = false;
+  $("#download").classList.remove("btn-primary");   // imprimir vira a ação principal
+  $("#print").addEventListener("click", printSheets);
+} else {
+  $("#printNote").hidden = false;
+}
+
+/* ═══════════════════════════ 11. INÍCIO ═══════════════════════════ */
+(function mark() {
+  const ops = [], rec = { ops, m: [1, 0, 0, 1, -X0, -ROW1_Y] };
+  const right = lockup(rec, { rule: "currentColor", word: "currentColor" });
+  $("#mark").innerHTML = toSVG(ops, right - X0, ROW1_H, { cls: "mark" });
+})();
+load();
+renderRecent();
+$("#recent").open = hist.catalog.length > 0;
+renderItems();
+renderPreview();
+window.vcEtiquetas = { buildPDF, state, EAN, parsePrice, setQty, normalize, renderItems, renderPreview, record, hist: () => hist };
+</script>

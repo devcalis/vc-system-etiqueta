@@ -1,0 +1,13 @@
+{
+  "name": "vc-system-etiqueta",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gerador de etiquetas 4x3 cm da VC Outlet (folha 10x15, 12 por folha).",
+  "scripts": {
+    "build": "python3 gerador/build.py",
+    "test": "bash gerador/testes/rodar.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
